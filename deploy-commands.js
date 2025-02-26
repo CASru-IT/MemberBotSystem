@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 const { REST } = require('@discordjs/rest'); //RESTを読み込む
 const { Routes } = require('discord-api-types/v9'); //Routesを読み込む

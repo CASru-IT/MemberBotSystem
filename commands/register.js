@@ -1,3 +1,4 @@
+
 //このファイルは、/registerコマンドを処理します。
 const { SlashCommandBuilder } = require('@discordjs/builders');//SlashCommandBuilderを読み込む
 const { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
@@ -5,7 +6,7 @@ const { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = req
 const { showModal } = require('./register/form');
 const {grade} = require('./register/grade');
 var list0=[];//ここに名前とふりがなと学籍番号とメールアドレスが入る
-number_grade=null;//ここに学年が入る
+var number_grade=null;//ここに学年が入る
 
 module.exports = {
     data: new SlashCommandBuilder()
