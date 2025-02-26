@@ -1,25 +1,22 @@
 import { ActionRowBuilder,StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } from 'discord.js';
 
-async function grade(interaction) {//setLabelのみ変更する必要あり
-    const select = new StringSelectMenuBuilder()
+async function academic_department(interaction) {//setLabelとsetValueを変更する必要あり
+    const select = new StringSelectMenuBuilder()//setLabelとsetValueは同じでいい
         .setCustomId('starter')
         .setPlaceholder('Make a selection!')
         .addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel('1')
-                .setValue('1'),
+                .setLabel('先導学類')
+                .setValue('先導学類'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('2')
-                .setValue('2'),
+                .setLabel('観光デザイン学類')
+                .setValue('観光デザイン学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('3')
                 .setValue('3'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('4')
                 .setValue('4'),
-            new StringSelectMenuOptionBuilder()
-                .setLabel('その他')
-                .setValue('5'),
         );
         const row = new ActionRowBuilder()
 			.addComponents(select);
@@ -41,4 +38,4 @@ async function grade(interaction) {//setLabelのみ変更する必要あり
             return null;
         }
 }
-export { grade }
+export { academic_department }
