@@ -1,12 +1,11 @@
-
 const fs = require('fs');
 const { REST } = require('@discordjs/rest'); //RESTを読み込む
 const { Routes } = require('discord-api-types/v9'); //Routesを読み込む
 require('dotenv').config();
 
-const client_id = process.env.CLIENT_ID //クライアントIDをclient_idに代入
-const guild_id = process.env.GUILD_ID //サーバーIDをguild_idに代入
-const token = process.env.DISCORD_TOKEN //トークン
+const client_id = process.env.CLIENT_ID; //クライアントIDをclient_idに代入
+const guild_id = process.env.GUILD_ID; //サーバーIDをguild_idに代入
+const token = process.env.DISCORD_TOKEN; //トークン
 
 //コマンドファイルを読み込む
 const commands = [];
@@ -25,8 +24,15 @@ const rest = new REST({ version: '9' }).setToken(token);
     try {
         console.log('Started refreshing application (/) commands.');
 
+        // ギルドコマンドとして登録
         await rest.put(
             Routes.applicationGuildCommands(client_id, guild_id),
+            { body: commands },
+        );
+
+        // グローバルコマンドとして登録
+        await rest.put(
+            Routes.applicationCommands(client_id),
             { body: commands },
         );
 

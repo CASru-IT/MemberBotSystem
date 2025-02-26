@@ -1,2 +1,12 @@
-install sqlite3
+npm install discord.js
+npm install dotenv
 npm install better-sqlite3
+
+node . で実行可能
+
+班の扱いjson
+key:object
+班の名前:所属しているorしてない(0or1?)
+
+
+学年でその他でサークル費を判別し、2500円のqrコードを使用していた場合は弾く

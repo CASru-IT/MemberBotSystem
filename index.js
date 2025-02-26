@@ -5,7 +5,13 @@ require('dotenv').config();
 
 //コマンドの設定
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages], partials: [Partials.Channel]
+    intents: [
+GatewayIntentBits.Guilds,
+GatewayIntentBits.MessageContent,
+GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages // 追加
+    ],
+partials: [Partials.Channel] // 追加
 });
 
 client.commands = new Collection(); //新しいインスタンスを作成します
