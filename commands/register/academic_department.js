@@ -1,9 +1,9 @@
-import { ActionRowBuilder,StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder } from 'discord.js';
+import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 
-async function academic_department(interaction) {//setLabelとsetValueを変更する必要あり
-    const select = new StringSelectMenuBuilder()//setLabelとsetValueは同じでいい
+async function academic_department(interaction) {
+    const select = new StringSelectMenuBuilder()
         .setCustomId('starter')
-        .setPlaceholder('Make a selection!')
+        .setPlaceholder('学類を選択してください')
         .addOptions(
             new StringSelectMenuOptionBuilder()
                 .setLabel('人文学類')
@@ -30,8 +30,8 @@ async function academic_department(interaction) {//setLabelとsetValueを変更�
                 .setLabel('物質化学類')
                 .setValue('物質化学類'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('理工３学類')
-                .setValue('理工３学類'),
+                .setLabel('機械工学類')
+                .setValue('機械工学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('フロンティア工学類')
                 .setValue('フロンティア工学類'),
@@ -46,13 +46,16 @@ async function academic_department(interaction) {//setLabelとsetValueを変更�
                 .setValue('生命理工学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('医学類')
+                .setValue('医学類'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('薬学類')
                 .setValue('薬学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('医薬科学類')
                 .setValue('医薬科学類'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('保険学類')
-                .setValue('保険学類'),
+                .setLabel('保健学類')
+                .setValue('保健学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('先導学類')
                 .setValue('先導学類'),
@@ -61,26 +64,39 @@ async function academic_department(interaction) {//setLabelとsetValueを変更�
                 .setValue('観光デザイン学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('スマート創成科学類')
-                .setValue('スマート創成科学類'),
+                .setValue('スマート創成科学類')
         );
-        const row = new ActionRowBuilder()
-			.addComponents(select);
 
-		await interaction.followUp({
-			content: 'Choose your starter!',
-			components: [row],
-		});
-        try {
-            const collected = await interaction.channel.awaitMessageComponent({
-                filter: i => i.customId === 'starter' && i.user.id === interaction.user.id,
-                time: 60000
-            });
-            await collected.reply(`You chose ${collected.values[0]}`);
-            return collected.values[0];
-        } catch (error) {
-            console.error(error);
-            await interaction.followUp('Time out.');
-            return null;
-        }
+    const row = new ActionRowBuilder()
+        .addComponents(select);
+
+    const message = await interaction.followUp({
+        content: '学類を選択してください',
+        components: [row],
+    });
+
+    try {
+        const collected = await interaction.channel.awaitMessageComponent({
+            filter: i => i.customId === 'starter' && i.user.id === interaction.user.id,
+            time: 60000
+        });
+
+        await collected.reply(`${collected.values[0]}が選択されました`);
+
+        // セレクターを無効化する
+        const disabledSelect = StringSelectMenuBuilder.from(select).setDisabled(true);
+        const disabledRow = new ActionRowBuilder().addComponents(disabledSelect);
+
+        await message.edit({
+            components: [disabledRow],
+        });
+
+        return collected.values[0];
+    } catch (error) {
+        console.error(error);
+        await interaction.followUp('時間切れです');
+        return null;
+    }
 }
-export { academic_department }
+
+export { academic_department };

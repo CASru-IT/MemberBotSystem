@@ -6,6 +6,7 @@ const { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = req
 const { showModal } = require('./register/form');
 const {grade} = require('./register/grade');
 const {academic_department} = require('./register/academic_department');
+const { team } = require('./register/team');
 var list0=[];//ここに名前とふりがなと学籍番号とメールアドレスが入る
 var number_grade=null;//ここに学年が入る
 var department="";//ここに学類が入る
@@ -21,5 +22,6 @@ module.exports = {
         if(number_grade==null) return;
         department=await academic_department(interaction);
         if(department==null) return;
+        await team(interaction);
     },
 };
