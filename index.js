@@ -41,7 +41,7 @@ client.on('interactionCreate', async interaction => { //メッセージを受け
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'コマンド実行時にエラーが発生しました', ephemeral: true });
+        await interaction.followUp({ content: 'コマンド実行時にエラーが発生しました', ephemeral: true });
     }
 });
 
