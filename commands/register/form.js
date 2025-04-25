@@ -23,7 +23,7 @@ async function showModal(interaction) {
         .setLabel("氏名(ふりがな)")
         .setStyle(TextInputStyle.Short);
 
-    const text4 = new TextInputBuilder()//５つ目のテキストボックス
+    const text4 = new TextInputBuilder()//４つ目のテキストボックス
         .setCustomId('Input4')
         .setLabel("メール")
         .setStyle(TextInputStyle.Short);

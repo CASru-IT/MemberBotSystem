@@ -1,13 +1,23 @@
+require('dotenv').config(); // dotenvを読み込む
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const fs = require('fs');
 const { getData } = require('../sqlite.js'); // sqlite.jsからデータ取得関数を読み込む
 
+// 環境変数から許可されたユーザー名を取得
+const ALLOWED_USERS = process.env.ALLOWED_USERS.split(',');
+
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('csv') // コマンド名
-        .setDescription('データベースの内容をCSVファイルとして出力します'), // コマンドの説明
+        .setName('csv')
+        .setDescription('データベースの内容をCSVファイルとして出力します'),
     async execute(interaction) {
         try {
+            // 実行者のユーザー名をチェック
+            if (!ALLOWED_USERS.includes(interaction.user.username)) {
+                await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
+                return;
+            }
+
             // データベースからデータを取得
             const data = await getData();
 
@@ -34,7 +44,7 @@ module.exports = {
             // CSV形式に変換
             const csvContent = [
                 headers.join(','), // ヘッダー行
-                ...rows.map(row => row.map(value => `"${value}"`).join(',')) // データ行
+                ...rows.map(row => row.map(value => `"${value}"}`).join(',')) // データ行
             ].join('\n');
 
             // CSVファイルに書き出し（BOM付きUTF-8）
