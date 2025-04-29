@@ -25,7 +25,8 @@ async function showModal(interaction) {
 
     const text4 = new TextInputBuilder()//４つ目のテキストボックス
         .setCustomId('Input4')
-        .setLabel("メール")
+        .setLabel("メール（絵描き班とゲーム班の人はよく使うgmailアドレスを入力してください）")
+        .setPlaceholder("例：casru@gmail.com")
         .setStyle(TextInputStyle.Short);
 
     //各テキストボックスをモーダルという画面に追加

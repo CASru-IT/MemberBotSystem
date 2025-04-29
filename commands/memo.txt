@@ -1,6 +1,7 @@
 npm install discord.js
 npm install dotenv
 npm install better-sqlite3
+npm install qrcode
 
 node . で実行可能
 

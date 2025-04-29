@@ -67,7 +67,7 @@ module.exports = {
                     }
                 ]
             }]
-        });
+        ,emphemeral: true});
         //データベースに登録する
         insertData(discord_id, discord_name, list0[0], list0[1], list0[2], number_grade, department, list0[3], _team.join(","), "none");
     },
