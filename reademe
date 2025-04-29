@@ -1,0 +1,9 @@
+npm install discord.js
+npm install dotenv
+npm install better-sqlite3
+npm install qrcode
+
+
+envファイルには
+botのトークンとギルドIDなどを記載してください
+ALLOWED_USERSは/csvなどの重要なコマンドを実行できるユーザーのusernameを記載してください
