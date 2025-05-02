@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import QRCode from 'qrcode';
 import fs from 'fs';
+import { createCanvas, loadImage } from 'canvas'; // canvasライブラリを使用
 
 const db = new Database('casru.db');
 
@@ -26,7 +27,8 @@ const createTweetTableQuery2 = db.prepare(`
   CREATE TABLE IF NOT EXISTS QRCode (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     discord_id TEXT NOT NULL,
-    qr_code TEXT NOT NULL
+    qr_code TEXT NOT NULL,
+    price INTEGER NOT NULL
   );
 `);
 createTweetTableQuery2.run();
@@ -98,11 +100,11 @@ function generateRandomString(length) {
     }
 }
 
-function insertQRCode(discord_id, qr_code) {
+function insertQRCode(discord_id, qr_code, price) {
     const insertQRCodeQuery = db.prepare(`
-        INSERT INTO QRCode (discord_id, qr_code) VALUES (?, ?);
+        INSERT INTO QRCode (discord_id, qr_code, price) VALUES (?, ?, ?);
     `);
-    insertQRCodeQuery.run(discord_id, qr_code);
+    insertQRCodeQuery.run(discord_id, qr_code, price);
 }
 
 // データベースからQRコードを取得してPNGファイルとして出力する関数
@@ -128,8 +130,9 @@ function generateQRCodePng(discord_id, outputDir = './qrcodes') {
     // QRコードをPNGファイルとして生成
     return QRCode.toFile(outputFilePath, qrCodeData, {
         type: 'png',
-        width: 300,
+        width: 400,
         margin: 2,
+        errorCorrectionLevel: 'H', // エラー訂正レベルをHに設定
     })
         .then(() => {
             console.log(`QRコードが生成されました: ${outputFilePath}`);
@@ -150,7 +153,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
 
     // データベースからすべてのQRコードを取得
     const getAllQRCodesQuery = db.prepare(`
-        SELECT id, qr_code FROM QRCode;
+        SELECT id, qr_code, price FROM QRCode;
     `);
     const results = getAllQRCodesQuery.all();
 
@@ -162,21 +165,45 @@ function generateAllQRCodes(outputDir = './qrcodes') {
     const generatedFiles = [];
 
     // 各QRコードをPNGファイルとして生成
-    const promises = results.map(({ id, qr_code }) => {
+    const promises = results.map(({ id, qr_code, price }) => {
         const outputFilePath = `${outputDir}/${id}.png`;
 
-        return QRCode.toFile(outputFilePath, qr_code, {
-            type: 'png',
-            width: 300,
-            margin: 2,
-        })
-            .then(() => {
+        return new Promise((resolve, reject) => {
+            // キャンバスを作成
+            const canvas = createCanvas(300, 450); // 高さを450にしてスペースを確保
+            const ctx = canvas.getContext('2d');
+
+            // 背景を白に設定
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // QRコードを描画
+            QRCode.toCanvas(canvas, qr_code, { width: 300, margin: 2, errorCorrectionLevel: 'H' }, (err) => {
+                if (err) {
+                    console.error(`QRコード生成中にエラーが発生しました (ID: ${id}):`, err);
+                    reject(err);
+                    return;
+                }
+
+                // テキストを追加
+                ctx.fillStyle = '#000000'; // 黒色
+                ctx.font = '20px "MS Gothic"'; // Windows用フォント
+                // Linuxの場合は以下のように変更
+                // ctx.font = '20px "Noto Sans CJK JP"';
+                ctx.textAlign = 'center';
+
+                const label = price === 2500 ? '学部生用' : '院生またはその他用';
+                ctx.fillText(label, canvas.width / 2, 420); // QRコードの下部にテキストを描画
+
+                // ファイルとして保存
+                const buffer = canvas.toBuffer('image/png');
+                fs.writeFileSync(outputFilePath, buffer);
+
                 console.log(`QRコードが生成されました: ${outputFilePath}`);
                 generatedFiles.push(outputFilePath);
-            })
-            .catch((err) => {
-                console.error(`QRコード生成中にエラーが発生しました (ID: ${id}):`, err);
+                resolve();
             });
+        });
     });
 
     return Promise.all(promises).then(() => generatedFiles);

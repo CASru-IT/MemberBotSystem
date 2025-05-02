@@ -1,9 +1,8 @@
 require('dotenv').config(); // dotenvを読み込む
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { generateRandomString, insertQRCode, generateAllQRCodes } = require('../sqlite.js'); // sqlite.jsからランダム文字列生成関数を読み込む
+const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
 
-// 環境変数から許可されたユーザー名を取得
-var ALLOWED_USERS;
 const Number = 30; // QRコードの文字数
 
 module.exports = {
@@ -14,23 +13,30 @@ module.exports = {
             option.setName('count')
                 .setDescription('生成するQRコードの個数')
                 .setRequired(true)
-        ),
+        )
+        .addStringOption(option =>
+            option.setName("yen")
+                .setDescription("5000円か2500円を選択してください")
+                .addChoices(
+                    { name: "5000円", value: "5000" },
+                    { name: "2500円", value: "2500" }
+                )
+                .setRequired(true)
+            ),
     async execute(interaction) {
         try {
             // 実行者のユーザー名をチェック
-            ALLOWED_USERS = process.env.ALLOWED_USERS.split(',');
-            if (!ALLOWED_USERS.includes(interaction.user.username)) {
+            if (!isUserAllowed(interaction.user.username)) {
                 await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
                 return;
             }
-
             // 引数から生成する個数を取得
             const count = interaction.options.getInteger('count');
             if (count <= 0) {
                 await interaction.reply({ content: '生成する個数は1以上で指定してください。', ephemeral: true });
                 return;
             }
-
+            const yen = interaction.options.getString("yen");
             const qrCodes = [];
             for (let i = 0; i < count; i++) {
                 // ランダムな文字列を生成
@@ -38,7 +44,7 @@ module.exports = {
                 console.log("生成されたQRコード:", randomString); // デバッグ用
 
                 // QRコードをデータベースに保存
-                await insertQRCode(interaction.user.id, randomString); // Discord IDを正しく渡す
+                await insertQRCode("none", randomString, yen);
                 qrCodes.push(randomString);
             }
 

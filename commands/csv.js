@@ -2,10 +2,7 @@ require('dotenv').config(); // dotenvを読み込む
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const fs = require('fs');
 const { getData } = require('../sqlite.js'); // sqlite.jsからデータ取得関数を読み込む
-//const { ALLOWED_USERS } = require('dns');
-
-// 環境変数から許可されたユーザー名を取得
-var ALLOWED_USERS;
+const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,8 +11,7 @@ module.exports = {
     async execute(interaction) {
         try {
             // 実行者のユーザー名をチェック
-            ALLOWED_USERS = process.env.ALLOWED_USERS.split(',');
-            if (!ALLOWED_USERS.includes(interaction.user.username)) {
+            if (!isUserAllowed(interaction.user.username)) {
                 await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
                 return;
             }

@@ -2,18 +2,18 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require('discord.js');
 const fs = require('fs');
 const { getDataByTeam } = require('../sqlite.js'); // sqlite.jsに班でデータを取得する関数を追加する必要があります
-var ALLOWED_USERS;
+const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('team_csv')
         .setDescription('選択した班に所属している人をCSVで出力します'),
     async execute(interaction) {
-        ALLOWED_USERS = process.env.ALLOWED_USERS.split(',');
-            if (!ALLOWED_USERS.includes(interaction.user.username)) {
-                await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
-                return;
-            }
+        // 実行者のユーザー名をチェック
+        if (!isUserAllowed(interaction.user.username)) {
+            await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
+            return;
+        }
         // 班のセレクターを作成
         const select = new StringSelectMenuBuilder()
             .setCustomId('team_selector')

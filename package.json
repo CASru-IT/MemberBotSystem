@@ -11,11 +11,18 @@
   "dependencies": {
     "@discordjs/builders": "^1.10.1",
     "@discordjs/rest": "^2.4.3",
+    "@jimp/core": "^1.6.0",
+    "@jimp/plugins": "^0.22.12",
+    "@jimp/types": "^1.6.0",
     "better-sqlite3": "^11.9.1",
+    "canvas": "^3.1.0",
     "discord-api-types": "^0.37.119",
     "discord.js": "^14.18.0",
     "dotenv": "^16.5.0",
-    "qrcode": "^1.5.4"
+    "jsqr": "^1.4.0",
+    "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.4",
+    "qrcode-reader": "^1.0.4"
   },
   "repository": {
     "type": "git",
