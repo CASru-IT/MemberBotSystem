@@ -107,43 +107,6 @@ function insertQRCode(discord_id, qr_code, price) {
     insertQRCodeQuery.run(discord_id, qr_code, price);
 }
 
-// データベースからQRコードを取得してPNGファイルとして出力する関数
-function generateQRCodePng(discord_id, outputDir = './qrcodes') {
-    // ディレクトリが存在しない場合は作成
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir);
-    }
-
-    // データベースからQRコードを取得
-    const getQRCodeQuery = db.prepare(`
-        SELECT qr_code FROM QRCode WHERE discord_id = ?;
-    `);
-    const result = getQRCodeQuery.get(discord_id);
-
-    if (!result) {
-        throw new Error(`指定されたDiscord ID (${discord_id}) に対応するQRコードが見つかりません。`);
-    }
-
-    const qrCodeData = result.qr_code;
-    const outputFilePath = `${outputDir}/${discord_id}.png`;
-
-    // QRコードをPNGファイルとして生成
-    return QRCode.toFile(outputFilePath, qrCodeData, {
-        type: 'png',
-        width: 400,
-        margin: 2,
-        errorCorrectionLevel: 'H', // エラー訂正レベルをHに設定
-    })
-        .then(() => {
-            console.log(`QRコードが生成されました: ${outputFilePath}`);
-            return outputFilePath;
-        })
-        .catch((err) => {
-            console.error('QRコード生成中にエラーが発生しました:', err);
-            throw err;
-        });
-}
-
 // データベース内のすべてのQRコードをPNGファイルとして生成する関数
 function generateAllQRCodes(outputDir = './qrcodes') {
     // ディレクトリが存在しない場合は作成
@@ -165,48 +128,58 @@ function generateAllQRCodes(outputDir = './qrcodes') {
     const generatedFiles = [];
 
     // 各QRコードをPNGファイルとして生成
-    const promises = results.map(({ id, qr_code, price }) => {
+    const promises = results.map(async ({ id, qr_code, price }) => {
         const outputFilePath = `${outputDir}/${id}.png`;
 
-        return new Promise((resolve, reject) => {
-            // キャンバスを作成
-            const canvas = createCanvas(300, 450); // 高さを450にしてスペースを確保
+        try {
+            // 一時的にQRコードを生成
+            const tempFilePath = `${outputDir}/temp_${id}.png`;
+            await QRCode.toFile(tempFilePath, qr_code, {
+                type: 'png',
+                width: 300,
+                margin: 2,
+            });
+
+            // Canvasを作成
+            const canvas = createCanvas(300, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
 
-            // 背景を白に設定
-            ctx.fillStyle = '#FFFFFF';
+            // 背景を白で塗りつぶす
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // QRコードを描画
-            QRCode.toCanvas(canvas, qr_code, { width: 300, margin: 2, errorCorrectionLevel: 'H' }, (err) => {
-                if (err) {
-                    console.error(`QRコード生成中にエラーが発生しました (ID: ${id}):`, err);
-                    reject(err);
-                    return;
-                }
+            // 日本語フォントを指定してテキストを描画
+            ctx.fillStyle = '#000000';
+            ctx.font = '20px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif'; // 日本語フォントを指定
+            ctx.textAlign = 'center';
+            ctx.fillText('Casるへようこそ！', canvas.width / 2, 30);
 
-                // テキストを追加
-                ctx.fillStyle = '#000000'; // 黒色
-                ctx.font = '20px "MS Gothic"'; // Windows用フォント
-                // Linuxの場合は以下のように変更
-                // ctx.font = '20px "Noto Sans CJK JP"';
-                ctx.textAlign = 'center';
+            // 価格に応じたテキストを描画
+            const priceText = price === 5000 ? '学部生用' : '院生用または外部生用';
+            ctx.fillText(priceText, canvas.width / 2, 60);
 
-                const label = price === 2500 ? '学部生用' : '院生またはその他用';
-                ctx.fillText(label, canvas.width / 2, 420); // QRコードの下部にテキストを描画
+            // QRコード画像を読み込んで描画
+            const qrImage = await loadImage(tempFilePath);
+            ctx.drawImage(qrImage, 0, 80, 300, 300);
 
-                // ファイルとして保存
-                const buffer = canvas.toBuffer('image/png');
-                fs.writeFileSync(outputFilePath, buffer);
+            // 最終的な画像を保存
+            const out = fs.createWriteStream(outputFilePath);
+            const stream = canvas.createPNGStream();
+            stream.pipe(out);
 
-                console.log(`QRコードが生成されました: ${outputFilePath}`);
-                generatedFiles.push(outputFilePath);
-                resolve();
-            });
-        });
+            await new Promise((resolve) => out.on('finish', resolve));
+
+            console.log(`QRコードが生成されました: ${outputFilePath}`);
+            generatedFiles.push(outputFilePath);
+
+            // 一時ファイルを削除
+            fs.unlinkSync(tempFilePath);
+        } catch (err) {
+            console.error(`QRコード生成中にエラーが発生しました (ID: ${id}):`, err);
+        }
     });
 
     return Promise.all(promises).then(() => generatedFiles);
 }
 
-export { executeQuery, insertData, getData, deleteData, getDataBydiscord_id, getDataByTeam, generateRandomString, insertQRCode, generateQRCodePng, generateAllQRCodes };
+export { executeQuery, insertData, getData, deleteData, getDataBydiscord_id, getDataByTeam, generateRandomString, insertQRCode, generateAllQRCodes };

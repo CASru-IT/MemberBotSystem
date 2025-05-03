@@ -32,25 +32,40 @@ module.exports = {
                 const arrayBuffer = await response.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
 
-                // 画像をcanvasに描画
-                const image = await loadImage(buffer);
-                const canvas = createCanvas(image.width, image.height);
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(image, 0, 0);
+                var qrCodeData = null;
 
-// デバッグ用にキャンバスの内容を保存
-                const debugBuffer = canvas.toBuffer('image/png');
-                fs.writeFileSync('debug-output.png', debugBuffer);
-                console.log('デバッグ用の画像を保存しました: debug-output.png');
+                try {
+                    // Discordから取得した画像を一時ファイルとして保存
+                    const tempFilePath = './temp-image.png';
+                    fs.writeFileSync(tempFilePath, buffer);
 
-                preprocessImage(ctx, canvas);
-                const debugBuffer2 = canvas.toBuffer('image/png');
-                fs.writeFileSync('debug-output2.png', debugBuffer2);
-                console.log('デバッグ用の画像を保存しました: debug-output2.png');
+                    // 画像を読み込む
+                    const image = await loadImage(tempFilePath);
+                    const canvas = createCanvas(image.width, image.height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0);
 
-                // QRコードを解析
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const qrCodeData = jsQR(imageData.data, canvas.width, canvas.height);
+                    // デバッグ用にキャンバスの内容を保存
+                    const debugBuffer = canvas.toBuffer('image/png');
+                    fs.writeFileSync('debug-output.png', debugBuffer);
+                    console.log('デバッグ用の画像を保存しました: debug-output.png');
+
+                    // QRコードを解析
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    preprocessImage(ctx, canvas); // 前処理を追加
+                    qrCodeData = jsQR(imageData.data, canvas.width, canvas.height);
+
+                    if (qrCodeData) {
+                        console.log('QRコードの内容:', qrCodeData.data);
+                    } else {
+                        console.log('QRコードが検出されませんでした。');
+                    }
+
+                    // 一時ファイルを削除
+                    fs.unlinkSync(tempFilePath);
+                } catch (error) {
+                    console.error('jsQRの処理中にエラーが発生しました:', error);
+                }
 
                 if (qrCodeData) {
                     console.log('QRコードの内容:', qrCodeData.data);
@@ -94,8 +109,8 @@ discordid = interaction.user.id;
                     }
                 } else {
                     console.log('QRコードの解析に失敗しました。画像データを確認してください。');
-                    console.log('Canvasサイズ:', canvas.width, canvas.height);
-                    console.log('画像データ:', imageData.data.slice(0, 100)); // 画像データの一部を出力
+                    //console.log('Canvasサイズ:', canvas.width, canvas.height);
+                    //console.log('画像データ:', imageData.data.slice(0, 100)); // 画像データの一部を出力
                     await message.reply('QRコードの解析に失敗しました。画像が正しいか確認してください。');
                     return;
                 }
