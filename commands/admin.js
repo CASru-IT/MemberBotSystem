@@ -21,7 +21,7 @@ module.exports = {
             const password = interaction.options.getString('password');
             const discordId = interaction.user.id; // 実行者のDiscord IDを取得
             // パスワードを検証
-            if (password !== process.env.PASSWARD) {
+            if (password !== process.env.PASSWORD) {
                 await interaction.reply({ content: 'パスワードが間違っています。', ephemeral: true });
                 return;
             }

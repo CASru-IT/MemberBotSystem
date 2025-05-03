@@ -128,7 +128,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
     const generatedFiles = [];
 
     // 各QRコードをPNGファイルとして生成
-    const promises = results.map(async ({ id, qr_code }) => {
+    const promises = results.map(async ({ id, qr_code, price }) => {
         const outputFilePath = `${outputDir}/${id}.png`;
 
         try {
@@ -141,7 +141,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             });
 
             // Canvasを作成
-            const canvas = createCanvas(300, 350); // 高さを少し大きくする
+            const canvas = createCanvas(300, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
 
             // 背景を白で塗りつぶす
@@ -154,9 +154,13 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             ctx.textAlign = 'center';
             ctx.fillText('Casるへようこそ！', canvas.width / 2, 30);
 
+            // 価格に応じたテキストを描画
+            const priceText = price === 5000 ? '学部生用' : '院生用または外部生用';
+            ctx.fillText(priceText, canvas.width / 2, 60);
+
             // QRコード画像を読み込んで描画
             const qrImage = await loadImage(tempFilePath);
-            ctx.drawImage(qrImage, 0, 50, 300, 300);
+            ctx.drawImage(qrImage, 0, 80, 300, 300);
 
             // 最終的な画像を保存
             const out = fs.createWriteStream(outputFilePath);
