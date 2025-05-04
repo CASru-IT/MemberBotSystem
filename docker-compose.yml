@@ -8,7 +8,14 @@ services:
       - MemberPaymentManageBotDB:/app/casru.db
     env_file:
       - .env
+    environment:
+      - DISCORD_TOKEN = ${DISCORD_TOKEN}
+      - CLIENT_ID = ${CLIENT_ID}
+      - GUILD_ID = ${GUILD_ID}
+      - ALLOWED_USERS = ${ALLOWED_USERS}
+    restart: always
 
+#casru.dbが実体を持っているのでむやみにいじらないこと
 volumes:
   MemberPaymentManageBotDB:
     driver: local
