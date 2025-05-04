@@ -1,12 +1,7 @@
 npm install discord.js
 npm install dotenv
 npm install better-sqlite3
-npm install qrcode
-npm install canvas
-npm install qrcode-reader
-npm install node-fetch
-
 
 envファイルには
 botのトークンとギルドIDなどを記載してください
-ALLOWED_USERSは/csvなどの重要なコマンドを実行できるユーザーのusernameを記載してください
+PASSWORDは/csvなどの重要なコマンドを実行できるユーザーだけがわかるPASSWORDを入力してください

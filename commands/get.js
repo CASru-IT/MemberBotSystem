@@ -56,6 +56,10 @@ module.exports = {
                     {
                         name: "班",
                         value: data.team || "未設定"
+                    },
+                    {
+                        name: "最終支払日",
+                        value: data.last_payment_date || "未登録"
                     }
                 ]
             }],

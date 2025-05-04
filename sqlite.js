@@ -9,7 +9,7 @@ const db = new Database('casru.db');
 const createTweetTableQuery = db.prepare(`
 CREATE TABLE IF NOT EXISTS Member_Information (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  discord_id TEXT NOT NULL,
+  discord_id TEXT NOT NULL UNIQUE,
   discord_name TEXT NOT NULL,
   name TEXT NOT NULL,
   furigana TEXT NOT NULL,
@@ -42,10 +42,24 @@ function executeQuery(query, params) {
 // データを挿入する関数を定義します
 function insertData(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date) {
     console.log(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
-    const insertTweetQuery = db.prepare(`
-    INSERT INTO Member_Information (discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date) VALUES (?, ?, ? ,?, ?, ?, ?, ?, ?, ?);
-    `);
-    insertTweetQuery.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
+
+    const query = `
+        INSERT INTO Member_Information (discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(discord_id) DO UPDATE SET
+            discord_name = excluded.discord_name,
+            name = excluded.name,
+            furigana = excluded.furigana,
+            student_number = excluded.student_number,
+            grade = excluded.grade,
+            academic_department = excluded.academic_department,
+            mail_address = excluded.mail_address,
+            team = excluded.team,
+            last_payment_date = excluded.last_payment_date;
+    `;
+
+    const stmt = db.prepare(query);
+    stmt.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
 }
 
 // データを取得する関数を定義します
@@ -71,11 +85,11 @@ function getDataByTeam(team) {
 }
 
 // データを削除する関数を定義します
-function deleteData(id) {
+function deleteData(discordid) {
     const deleteTweetQuery = db.prepare(`
     DELETE FROM Member_Information WHERE id = ?;
     `);
-    deleteTweetQuery.run(id);
+    deleteTweetQuery.run(discordid);
 }
 
 // QRコード用のランダムな文字列を生成する関数を定義します

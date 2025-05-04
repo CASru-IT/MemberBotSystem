@@ -1,9 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const jsQR = require('jsqr');
-const fetch = global.fetch;
-const { createCanvas, loadImage } = require('canvas');
 const Database = require('better-sqlite3');
-const fs = require('fs');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
 // データベース接続
 const db = new Database('./casru.db');
@@ -13,164 +10,94 @@ module.exports = {
         .setName('pay')
         .setDescription('QRコードを読み取り、会費の支払いを完了します。'),
     async execute(interaction) {
-        await interaction.reply({ content: 'QRコードを含む画像を送信してください。', flags: 64 });
+        try {
+// チャンネルがDMであるかを確認
+            //if (!interaction.channel.isDMBased()) {
+            //    await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
+            //    return;
+            //}
+            // モーダルを作成
+            const modal = new ModalBuilder()
+                .setCustomId('modalTest')
+                .setTitle('会費支払用のページ');
 
-        // メッセージを待機
-        const filter = (message) => message.attachments.size > 0;
-        const collector = interaction.channel.createMessageCollector({ filter, time: 60000 });
+            const text1 = new TextInputBuilder()
+                .setCustomId('Input1')
+                .setLabel("QRコードの内容を入力してください")
+                .setStyle(TextInputStyle.Short);
 
-        collector.on('collect', async (message) => {
-            const attachment = message.attachments.first();
-            if (!attachment) {
-                await message.reply('画像が見つかりませんでした。');
-                return;
-            }
+            const firstActionRow = new ActionRowBuilder().addComponents(text1);
+            modal.addComponents(firstActionRow);
 
-            try {
-                // 画像を取得
-                const response = await fetch(attachment.url);
-                const arrayBuffer = await response.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
+            // モーダルを表示
+            await interaction.showModal(modal);
 
-                var qrCodeData = null;
+            // モーダルが入力されるまで待機
+            const submitted = await interaction.awaitModalSubmit({
+                filter: i => i.customId === 'modalTest' && i.user.id === interaction.user.id,
+                time: 60000, // タイムアウト時間（ミリ秒）
+            });
 
-                try {
-                    // Discordから取得した画像を一時ファイルとして保存
-                    const tempFilePath = './temp-image.png';
-                    fs.writeFileSync(tempFilePath, buffer);
+            // 入力された情報を取得
+            const qrCodeData = submitted.fields.getTextInputValue('Input1');
+            const row = db.prepare('SELECT * FROM QRCode WHERE qr_code = ?').get(qrCodeData);
+            console.log('QRコードの内容:', qrCodeData);
+            console.log('データベースの内容:', row);
 
-                    // 画像を読み込む
-                    const image = await loadImage(tempFilePath);
-                    const canvas = createCanvas(image.width, image.height);
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(image, 0, 0);
+            if (row) {
+                const discordid = row.discord_id;
 
-                    // デバッグ用にキャンバスの内容を保存
-                    const debugBuffer = canvas.toBuffer('image/png');
-                    fs.writeFileSync('debug-output.png', debugBuffer);
-                    console.log('デバッグ用の画像を保存しました: debug-output.png');
-
-                    // QRコードを解析
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    preprocessImage(ctx, canvas); // 前処理を追加
-                    qrCodeData = jsQR(imageData.data, canvas.width, canvas.height);
-
-                    if (qrCodeData) {
-                        console.log('QRコードの内容:', qrCodeData.data);
-                    } else {
-                        console.log('QRコードが検出されませんでした。');
-                    }
-
-                    // 一時ファイルを削除
-                    fs.unlinkSync(tempFilePath);
-                } catch (error) {
-                    console.error('jsQRの処理中にエラーが発生しました:', error);
-                }
-
-                if (qrCodeData) {
-                    console.log('QRコードの内容:', qrCodeData.data);
-
-                    // データベースと比較
-                    try {
-                        const row = db.prepare('SELECT * FROM QRCode WHERE qr_code = ?').get(qrCodeData.data);
-
-                        if (row) {
-                            await message.reply(`QRコードが確認されました。\nID: ${row.id}\n価格: ${row.price}`);
-// ここで支払い処理を行うことができます
-discordid = interaction.user.id;
-                            price = row.price;
-                            if (discordid == "none") {
-                                pay(message, db, discordid, qrCodeData.data, price); // 支払い処理を実行
-                            } else {
-                                await message.reply("このQRコードはすでに使用されています。");
-                            }
-                            // ここで支払い処理を行うことができます
-                            discordid = interaction.user.id;
-                            price = row.price;
-                            if (discordid == "none") {
-                                pay(message, db, discordid, qrCodeData.data, price); // 支払い処理を実行
-                            } else {
-                                await message.reply("このQRコードはすでに使用されています。");
-                            }
-                            // ここで支払い処理を行うことができます
-                            discordid = interaction.user.id;
-                            price = row.price;
-                            if (discordid == "none") {
-                                pay(message, db, discordid, qrCodeData.data, price); // 支払い処理を実行
-                            } else {
-                                await message.reply("このQRコードはすでに使用されています。");
-                            }
-                        } else {
-                            await message.reply('QRコードがデータベースに存在しません。');
-                        }
-                    } catch (dbError) {
-                        console.error('データベースエラー:', dbError);
-                        await message.reply('データベースエラーが発生しました。');
-                    }
+                if (discordid === "none") {
+                    console.log("QRコードは未使用です。支払いを処理します。");
+                    await submitted.reply({ content: "QRコードは未使用です。支払いを処理します。", ephemeral: true });
+                    console.log("pay関数を呼び出します"); // デバッグ用ログ
+                    await pay(interaction, db, interaction.user.id, qrCodeData, row.price);
                 } else {
-                    console.log('QRコードの解析に失敗しました。画像データを確認してください。');
-                    //console.log('Canvasサイズ:', canvas.width, canvas.height);
-                    //console.log('画像データ:', imageData.data.slice(0, 100)); // 画像データの一部を出力
-                    await message.reply('QRコードの解析に失敗しました。画像が正しいか確認してください。');
-                    return;
+                    console.log("このQRコードはすでに使用されています。");
+                    await submitted.reply({ content: "このQRコードはすでに使用されています。", ephemeral: true });
                 }
-            } catch (error) {
-                console.error('エラーが発生しました:', error);
-                await message.reply('画像の処理中にエラーが発生しました。');
+            } else {
+                await submitted.reply({ content: 'QRコードがデータベースに存在しません。', ephemeral: true });
             }
-        });
-
-        collector.on('end', async (collected) => {
-            if (collected.size === 0) {
-                await interaction.followUp({ content: '画像が送信されませんでした。タイムアウトしました。', flags: 64 });
+        } catch (error) {
+            console.error('モーダルの待機中にエラーが発生しました:', error);
+            if (!interaction.replied) {
+                await interaction.reply({ content: 'モーダルの待機中にエラーが発生しました。', ephemeral: true });
             }
-        });
+        }
     },
 };
 
-// グレースケール化とコントラスト調整
-function preprocessImage(ctx, canvas) {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+async function pay(interaction, db, discordid, qrdata, price) {
+    console.log("pay関数が呼び出されました"); // デバッグ用ログ
+    console.log("discordid:", discordid); // デバッグ用ログ
 
-    for (let i = 0; i < data.length; i += 4) {
-        // グレースケール化
-        const gray = 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
-        data[i] = gray; // Red
-        data[i + 1] = gray; // Green
-        data[i + 2] = gray; // Blue
+    const row = db.prepare("SELECT * FROM Member_Information WHERE discord_id = ?").get(discordid);
+    console.log("Member_Informationの内容:", row); // デバッグ用ログ
 
-        // コントラスト調整（例: 値を強調）
-        if (gray > 100) {
-            data[i] = data[i + 1] = data[i + 2] = 255; // 白
-        } else {
-            data[i] = data[i + 1] = data[i + 2] = 0; // 黒
-        }
-    }
+    if (row) {
+        const grade = row.grade;
+        const currentDate = new Date().toISOString(); // ISO形式の文字列に変換
 
-    ctx.putImageData(imageData, 0, 0);
-}
-
-async function pay(message,db,discordid, qrdata, price) {
-    // データベースに支払い情報を保存する処理を実装
-    row = db.prepare("SELECT * FROM Member_Information WHERE discord_id = ?").get(discordid);
-    if(row){
-        grade = row.grade;
-        if(grade <= 4){
-            if(price == 5000){
-                db.prepare("UPDATE Member_Information SET last_payment_date = ? WHERE discord_id = ?").run(new Date(), discordid);
+        if (grade <= 4) {
+            if (price == 5000) {
+                db.prepare("UPDATE Member_Information SET last_payment_date = ? WHERE discord_id = ?").run(currentDate, discordid);
                 db.prepare("UPDATE QRCode SET discord_id = ? WHERE qr_code = ?").run(discordid, qrdata);
-                await message.reply("5000円の支払いが完了しました。");
-            }else if(price == 2500){
-                await message.reply("このQRコードは院生または外部生用です。役員に問い合わせてください。");
+                await interaction.followUp({ content: "5000円の支払いが完了しました。", ephemeral: true });
+            } else if (price == 2500) {
+                await interaction.followUp({ content: "このQRコードは院生または外部生用です。役員に問い合わせてください。", ephemeral: true });
             }
-            if(price == 2500){
-                db.prepare("UPDATE Member_Information SET last_payment_date = ? WHERE discord_id = ?").run(new Date(), discordid);
+        } else if (grade > 4) {
+            if (price == 2500) {
+                db.prepare("UPDATE Member_Information SET last_payment_date = ? WHERE discord_id = ?").run(currentDate, discordid);
                 db.prepare("UPDATE QRCode SET discord_id = ? WHERE qr_code = ?").run(discordid, qrdata);
-                await message.reply("2500円の支払いが完了しました。");
-            }else if(price == 5000){
-                await message.reply("このQRコードは学部生用です。役員に問い合わせてください。");
+                await interaction.followUp({ content: "2500円の支払いが完了しました。", ephemeral: true });
+            } else if (price == 5000) {
+                await interaction.followUp({ content: "このQRコードは学部生用です。役員に問い合わせてください。", ephemeral: true });
             }
         }
+    } else {
+        console.log("Member_Informationに該当するデータが見つかりませんでした");
+        await interaction.followUp({ content: "会員情報が見つかりませんでした。", ephemeral: true });
     }
 }
