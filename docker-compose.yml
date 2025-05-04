@@ -1,0 +1,18 @@
+services:
+  bot:
+    container_name: MemberPaymentManageBot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - MemberPaymentManageBotDB:/app/casru.db
+    env_file:
+      - .env
+
+volumes:
+  MemberPaymentManageBotDB:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./casru.db
+      o: bind
