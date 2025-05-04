@@ -19,7 +19,10 @@ module.exports = {
         .setName('register') //コマンド名を設定
         .setDescription('ユーザーの情報を登録します'), //コマンドの説明を設定
     async execute(interaction) {
-        
+        if (!interaction.channel.isDMBased()) {
+            await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
+            return;
+        }
         discord_name = interaction.user.tag; //discordの名前を取得
         discord_id = interaction.user.id; //discordのidを取得
         list0 = await showModal(interaction);

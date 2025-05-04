@@ -12,10 +12,10 @@ module.exports = {
     async execute(interaction) {
         try {
 // チャンネルがDMであるかを確認
-            //if (!interaction.channel.isDMBased()) {
-            //    await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
-            //    return;
-            //}
+            if (!interaction.channel.isDMBased()) {
+                await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
+                return;
+            }
             // モーダルを作成
             const modal = new ModalBuilder()
                 .setCustomId('modalTest')
