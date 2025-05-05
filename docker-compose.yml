@@ -15,11 +15,6 @@ services:
       - ALLOWED_USERS = ${ALLOWED_USERS}
     restart: always
 
-#casru.dbが実体を持っているのでむやみにいじらないこと
 volumes:
   MemberPaymentManageBotDB:
-    driver: local
-    driver_opts:
-      type: none
-      device: ./casru.db
-      o: bind
+    name: MemberPaymentManageBotDB
