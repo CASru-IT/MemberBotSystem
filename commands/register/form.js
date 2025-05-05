@@ -1,4 +1,4 @@
-import { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } from 'discord.js';
+const { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
 
 async function showModal(interaction) {
     //入力された情報を格納するリスト
@@ -66,4 +66,4 @@ async function showModal(interaction) {
     return list;//リストを返す
 }
 
-export { showModal };
+module.exports = { showModal };
