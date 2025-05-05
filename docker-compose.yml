@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - MemberPaymentManageBotDB:/app/casru.db
+      - ./casru.db:/app/casru.db
     env_file:
       - .env
     environment:
@@ -14,7 +14,3 @@ services:
       - GUILD_ID = ${GUILD_ID}
       - ALLOWED_USERS = ${ALLOWED_USERS}
     restart: always
-
-volumes:
-  MemberPaymentManageBotDB:
-    name: MemberPaymentManageBotDB
