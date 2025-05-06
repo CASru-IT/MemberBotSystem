@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
-import QRCode from 'qrcode';
-import fs from 'fs';
-import { createCanvas, loadImage } from 'canvas'; // canvasライブラリを使用
+const Database = require('better-sqlite3');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const { createCanvas, loadImage } = require('canvas'); // canvasライブラリを使用
 
 const db = new Database('casru.db');
 
@@ -155,7 +155,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             });
 
             // Canvasを作成
-            const canvas = createCanvas(300, 400); // 高さをさらに大きくする
+            const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
 
             // 背景を白で塗りつぶす
@@ -196,4 +196,14 @@ function generateAllQRCodes(outputDir = './qrcodes') {
     return Promise.all(promises).then(() => generatedFiles);
 }
 
-export { executeQuery, insertData, getData, deleteData, getDataBydiscord_id, getDataByTeam, generateRandomString, insertQRCode, generateAllQRCodes };
+module.exports = {
+    executeQuery,
+    insertData,
+    getData,
+    deleteData,
+    getDataBydiscord_id,
+    getDataByTeam,
+    generateRandomString,
+    insertQRCode,
+    generateAllQRCodes
+};

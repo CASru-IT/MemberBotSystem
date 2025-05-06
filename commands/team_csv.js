@@ -10,7 +10,7 @@ module.exports = {
         .setDescription('選択した班に所属している人をCSVで出力します'),
     async execute(interaction) {
         // 実行者のユーザー名をチェック
-        if (!isUserAllowed(interaction.user.username)) {
+        if (!isUserAllowed(interaction.user.id)) {
             await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
             return;
         }
