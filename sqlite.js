@@ -155,7 +155,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             });
 
             // Canvasを作成
-            const canvas = createCanvas(300, 400); // 高さをさらに大きくする
+            const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
 
             // 背景を白で塗りつぶす
@@ -205,5 +205,5 @@ module.exports = {
     getDataByTeam,
     generateRandomString,
     insertQRCode,
-    generateAllQRCodes,
+    generateAllQRCodes
 };

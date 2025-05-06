@@ -16,7 +16,7 @@ module.exports = {
         ),
     async execute(interaction) {
         // 実行者のユーザー名をチェック
-        if (!isUserAllowed(interaction.user.username)) {
+        if (!isUserAllowed(interaction.user.id)) {
             await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
             return;
         }
