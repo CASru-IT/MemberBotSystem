@@ -1,6 +1,6 @@
 require('dotenv').config(); // dotenvを読み込む
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { generateRandomString, insertQRCode, generateAllQRCodes } = require('../sqlite.js'); // sqlite.jsからランダム文字列生成関数を読み込む
+const { generateRandomString, insertQRCode, generateAllQRCodes,generateCustomQRCode } = require('../sqlite.js'); // sqlite.jsからランダム文字列生成関数を読み込む
 const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
 
 const Number = 30; // QRコードの文字数
@@ -22,7 +22,7 @@ module.exports = {
                     { name: "2500円", value: "2500" }
                 )
                 .setRequired(true)
-            ),
+        ),
     async execute(interaction) {
         try {
             // 実行者のユーザー名をチェック
@@ -30,12 +30,17 @@ module.exports = {
                 await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
                 return;
             }
+
+            // インタラクションを保留状態にする
+            await interaction.deferReply({ ephemeral: true });
+
             // 引数から生成する個数を取得
             const count = interaction.options.getInteger('count');
             if (count <= 0) {
-                await interaction.reply({ content: '生成する個数は1以上で指定してください。', ephemeral: true });
+                await interaction.editReply({ content: '生成する個数は1以上で指定してください。' });
                 return;
             }
+
             const yen = interaction.options.getString("yen");
             const qrCodes = [];
             for (let i = 0; i < count; i++) {
@@ -52,13 +57,18 @@ module.exports = {
             const generatedFiles = await generateAllQRCodes();
 
             // 結果を返信
-            await interaction.reply({
-                content: `生成されたQRコード:\n${qrCodes.join('\n')}\nPNGファイルが生成されました (${generatedFiles.length} 件)。`,
-                ephemeral: true // 他の人に見えないようにする
+            await interaction.editReply({
+                content: `生成されたQRコード:\n${qrCodes.join('\n')}\nPNGファイルが生成されました (${generatedFiles.length} 件)。`
             });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+
+            // エラーが発生した場合の応答
+            if (interaction.deferred) {
+                await interaction.editReply({ content: 'エラーが発生しました。' });
+            } else {
+                await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+            }
         }
     }
 };

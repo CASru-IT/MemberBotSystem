@@ -150,12 +150,12 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             const tempFilePath = `${outputDir}/temp_${id}.png`;
             await QRCode.toFile(tempFilePath, qr_code, {
                 type: 'png',
-                width: 300,
+                width: 500,
                 margin: 2,
             });
-
+            number = id; // QRコードのIDを取得
             // Canvasを作成
-            const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
+            /*const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
 
             // 背景を白で塗りつぶす
@@ -179,7 +179,45 @@ function generateAllQRCodes(outputDir = './qrcodes') {
             // 最終的な画像を保存
             const out = fs.createWriteStream(outputFilePath);
             const stream = canvas.createPNGStream();
-            stream.pipe(out);
+            stream.pipe(out);*/
+            // Canvasを作成
+        const canvas = createCanvas(1000, 400); // キャンバスサイズを指定
+        const ctx = canvas.getContext('2d');
+
+        // 背景を白で塗りつぶす
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // テキストのスタイルを設定
+        ctx.fillStyle = '#000000';
+        ctx.font = '30px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif'; // 日本語フォントを指定
+        ctx.textAlign = 'left';
+
+        // テキストを描画
+        if(price == 5000) {
+            ctx.fillText('学部生用', 50, 60); // 学部生用のテキストを描画
+        }
+        else {
+            ctx.fillText('院生用または外部生用', 50, 60); // 院生用または外部生用のテキストを描画
+        }
+        ctx.fillText('2025年度 会費', 50, 100);
+        ctx.fillText('金沢大学 CASる', 50, 140);
+        ctx.fillText(`No. ${number}`, 50, 180);
+        ctx.fillText(`支払額   ¥${price}`, 50, 220);
+        
+
+        // QRコード画像を読み込んで描画
+        const qrImage = await loadImage(tempFilePath);
+        ctx.drawImage(qrImage, 570, 40, 300, 300); // QRコードを右側に配置
+
+        // QRコードの説明を描画
+        ctx.fillText('QRコードを写真に撮って', 50, 300);
+        ctx.fillText('Casる-botに送ってください。', 50, 340);
+
+        // 最終的な画像を保存
+        const out = fs.createWriteStream(outputFilePath);
+        const stream = canvas.createPNGStream();
+        stream.pipe(out);
 
             await new Promise((resolve) => out.on('finish', resolve));
 
@@ -196,6 +234,70 @@ function generateAllQRCodes(outputDir = './qrcodes') {
     return Promise.all(promises).then(() => generatedFiles);
 }
 
+async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
+    try {
+        number = db.prepare(`
+            SELECT MAX(id) FROM QRCode;
+        `).get().max; // QRコードのIDを取得
+        outputFilePath = outputFilePath.replace(/\.png$/, `_${number}.png`); // 会員番号をファイル名に追加
+        // ディレクトリが存在しない場合は作成
+        const dir = outputFilePath.substring(0, outputFilePath.lastIndexOf('/'));
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        // 一時的にQRコードを生成
+        const tempFilePath = `${outputFilePath}_temp.png`;
+        await QRCode.toFile(tempFilePath, qrCodeData, {
+            type: 'png',
+            width: 300,
+            margin: 2,
+        });
+
+        // Canvasを作成
+        const canvas = createCanvas(600, 400); // キャンバスサイズを指定
+        const ctx = canvas.getContext('2d');
+
+        // 背景を白で塗りつぶす
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // テキストのスタイルを設定
+        ctx.fillStyle = '#000000';
+        ctx.font = '20px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif'; // 日本語フォントを指定
+        ctx.textAlign = 'left';
+
+        // テキストを描画
+        ctx.fillText('2025年度 会費', 20, 40);
+        ctx.fillText('金沢大学 CASる', 20, 80);
+        ctx.fillText(`No. ${number}`, 20, 120);
+        ctx.fillText(`支払額   ¥${price}`, 20, 160);
+
+        // QRコード画像を読み込んで描画
+        const qrImage = await loadImage(tempFilePath);
+        ctx.drawImage(qrImage, 350, 40, 200, 200); // QRコードを右側に配置
+
+        // QRコードの説明を描画
+        ctx.fillText('QRコードを写真に撮って', 20, 300);
+        ctx.fillText('Casる-botに送ってください。', 20, 340);
+
+        // 最終的な画像を保存
+        const out = fs.createWriteStream(outputFilePath);
+        const stream = canvas.createPNGStream();
+        stream.pipe(out);
+
+        await new Promise((resolve) => out.on('finish', resolve));
+
+        console.log(`QRコードが生成されました: ${outputFilePath}`);
+
+        // 一時ファイルを削除
+        fs.unlinkSync(tempFilePath);
+    } catch (err) {
+        console.error('QRコード生成中にエラーが発生しました:', err);
+    }
+}
+
+
+
 module.exports = {
     executeQuery,
     insertData,
@@ -205,5 +307,6 @@ module.exports = {
     getDataByTeam,
     generateRandomString,
     insertQRCode,
-    generateAllQRCodes
+    generateAllQRCodes,
+    generateCustomQRCode
 };
