@@ -3,7 +3,7 @@ const QRCode = require('qrcode');
 const fs = require('fs');
 const { createCanvas, loadImage } = require('canvas'); // canvasライブラリを使用
 
-const db = new Database('casru.db');
+const db = new Database('data\\casru.db');
 
 // テーブルが存在しない場合にのみ作成する
 const createTweetTableQuery = db.prepare(`

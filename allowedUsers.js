@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 // JSONファイルのパス
-const allowedUsersPath = './allowedUsers.json';
+const allowedUsersPath = 'data\\allowedUsers.json';
 
 /**
  * 指定されたユーザー名がallowedUsers.jsonに存在するか確認する関数

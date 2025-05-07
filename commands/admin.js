@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const fs = require('fs');
 
 // JSONファイルのパス
-const allowedUsersPath = './allowedUsers.json';
+const allowedUsersPath = 'data\\allowedUsers.json';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,13 +13,14 @@ module.exports = {
             option.setName('password')
                 .setDescription('管理者パスワードを入力してください')
                 .setRequired(true)
-        )
-        ,
+        ),
     async execute(interaction) {
         try {
+
             // 引数を取得
             const password = interaction.options.getString('password');
             const discordId = interaction.user.id; // 実行者のDiscord IDを取得
+
             // パスワードを検証
             if (password !== process.env.PASSWORD) {
                 await interaction.reply({ content: 'パスワードが間違っています。', ephemeral: true });
