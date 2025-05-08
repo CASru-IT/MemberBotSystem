@@ -1,6 +1,8 @@
 node_modules/
 qrcodes/*
+!qrcodes/.gitkeep
 data/*
+!data/.gitkeep
 .env
 testzxing.js
 testqr.js
