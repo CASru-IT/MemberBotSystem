@@ -1,5 +1,6 @@
 node_modules/
-qrcodes/
+qrcodes/*
+data/*
 .env
 testzxing.js
 testqr.js

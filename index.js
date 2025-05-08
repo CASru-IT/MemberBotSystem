@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { Client, GatewayIntentBits, Partials, ApplicationCommandType, ApplicationCommandOptionType, Collection, ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
 require('dotenv').config();
+const allowedUsersPath = 'data\\allowedUsers.json';
 //必要なモジュールを読み込む
 
 //コマンドの設定
@@ -19,6 +20,17 @@ partials: [Partials.Channel] // 追加
 });
 
 client.commands = new Collection(); //新しいインスタンスを作成します
+
+// allowedUsers.jsonが存在しない場合は作成
+if (!fs.existsSync('data')) {
+    fs.mkdirSync('data'); // dataフォルダを作成
+}
+
+if (!fs.existsSync(allowedUsersPath)) {
+    const initialData = { allowed_users: [] };
+    fs.writeFileSync(allowedUsersPath, JSON.stringify(initialData, null, 4), 'utf8');
+    console.log('allowedUsers.jsonを作成しました。');
+}
 
 //コマンドファイルを読み込む
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
