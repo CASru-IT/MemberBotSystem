@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - CasruDB:/app/data
+      - ./data:/app/data
       - ./qrcodes:/app/qrcodes
     env_file:
       - .env
