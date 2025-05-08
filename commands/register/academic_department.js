@@ -1,4 +1,4 @@
-import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 
 async function academic_department(interaction) {
     const select = new StringSelectMenuBuilder()
@@ -99,4 +99,4 @@ async function academic_department(interaction) {
     }
 }
 
-export { academic_department };
+module.exports = { academic_department };

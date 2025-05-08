@@ -1,0 +1,22 @@
+services:
+  bot:
+    container_name: MemberPaymentManageBot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - CasruDB:/app/data
+      - ./qrcodes:/app/qrcodes
+    env_file:
+      - .env
+    environment:
+      - DISCORD_TOKEN = ${DISCORD_TOKEN}
+      - CLIENT_ID = ${CLIENT_ID}
+      - GUILD_ID = ${GUILD_ID}
+      - ALLOWED_USERS = ${ALLOWED_USERS}
+    restart: always
+
+volumes:
+  CasruDB:
+    name: CasruDB
+    driver: local

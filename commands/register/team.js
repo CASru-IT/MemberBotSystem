@@ -1,4 +1,4 @@
-import { ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 async function team(interaction) {
     const teamNames = {
@@ -64,4 +64,4 @@ async function team(interaction) {
     }
 }
 
-export { team };
+module.exports = { team };
