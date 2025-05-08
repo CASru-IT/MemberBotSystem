@@ -5,7 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./casru.db:/app/casru.db
+      - CasruDB:/app/data
+      - ./qrcodes:/app/qrcodes
     env_file:
       - .env
     environment:
@@ -14,3 +15,8 @@ services:
       - GUILD_ID = ${GUILD_ID}
       - ALLOWED_USERS = ${ALLOWED_USERS}
     restart: always
+
+volumes:
+  CasruDB:
+    name: CasruDB
+    driver: local
