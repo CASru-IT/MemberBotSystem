@@ -18,7 +18,7 @@ async function grade(interaction) {
                 .setLabel('4年生')
                 .setValue('4'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('その他')
+                .setLabel('院生またはその他')
                 .setValue('5')
         );
 
