@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 
 // データベース接続
-const db = new Database('data\\casru.db');
+const db = new Database('data/casru.db');
 
 module.exports = {
     data: new SlashCommandBuilder()

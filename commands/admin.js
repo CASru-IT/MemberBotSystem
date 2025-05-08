@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const fs = require('fs');
 
 // JSONファイルのパス
-const allowedUsersPath = 'data\\allowedUsers.json';
+const allowedUsersPath = 'data/allowedUsers.json';
 
 module.exports = {
     data: new SlashCommandBuilder()

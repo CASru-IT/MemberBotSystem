@@ -10,9 +10,12 @@ module.exports = {
         .setDescription('データベースの内容をCSVファイルとして出力します'),
     async execute(interaction) {
         try {
+            // インタラクションを保留状態にする
+            await interaction.deferReply({ ephemeral: true });
+
             // 実行者のユーザー名をチェック
             if (!isUserAllowed(interaction.user.id)) {
-                await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
+                await interaction.editReply({ content: 'このコマンドを実行する権限がありません。' });
                 return;
             }
 
@@ -20,7 +23,7 @@ module.exports = {
             const data = await getData();
 
             if (data.length === 0) {
-                await interaction.reply({ content: 'データがありません。', ephemeral: true });
+                await interaction.editReply({ content: 'データがありません。' });
                 return;
             }
 
@@ -53,7 +56,7 @@ module.exports = {
             fs.writeFileSync(filePath, bom + csvContent, 'utf8');
 
             // ファイルをDiscordに送信
-            await interaction.reply({
+            await interaction.editReply({
                 content: 'データベースの内容をCSVファイルとして出力しました。',
                 files: [filePath]
             });
@@ -62,7 +65,13 @@ module.exports = {
             fs.unlinkSync(filePath);
         } catch (error) {
             console.error('エラーが発生しました:', error);
-            await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+
+            // エラーが発生した場合の応答
+            if (interaction.deferred) {
+                await interaction.editReply({ content: 'エラーが発生しました。' });
+            } else {
+                await interaction.reply({ content: 'エラーが発生しました。', ephemeral: true });
+            }
         }
     }
 };

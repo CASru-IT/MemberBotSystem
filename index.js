@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { Client, GatewayIntentBits, Partials, ApplicationCommandType, ApplicationCommandOptionType, Collection, ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
 require('dotenv').config();
-const allowedUsersPath = 'data\\allowedUsers.json';
+const allowedUsersPath = 'data/allowedUsers.json';
 //必要なモジュールを読み込む
 
 //コマンドの設定
