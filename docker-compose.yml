@@ -13,7 +13,7 @@ services:
       - DISCORD_TOKEN = ${DISCORD_TOKEN}
       - CLIENT_ID = ${CLIENT_ID}
       - GUILD_ID = ${GUILD_ID}
-      - ALLOWED_USERS = ${ALLOWED_USERS}
+      - PASSWORD = ${PASSWORD}
     restart: always
 
 volumes:
