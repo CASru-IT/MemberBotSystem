@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     build-essential \
     locales \
+    fonts-noto-cjk \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
