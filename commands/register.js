@@ -6,13 +6,7 @@ const { showModal } = require('./register/form');
 const { grade } = require('./register/grade');
 const { academic_department } = require('./register/academic_department');
 const { team } = require('./register/team');
-var list0 = []; //ここに名前とふりがなと学籍番号とメールアドレスが入る
-var number_grade = null; //ここに学年が入る
-var department = ""; //ここに学類が入る
-var _team = []; //ここに班が入る
-var discord_name = ""; //ここにdiscordのidが入る
-var discord_id = ""; //ここにdiscordの名前が入る
-const {insertData} = require('../sqlite.js'); //sqlite.jsから関数を読み込む
+const { insertData } = require('../sqlite.js'); //sqlite.jsから関数を読み込む
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,16 +17,23 @@ module.exports = {
             await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
             return;
         }
-        discord_name = interaction.user.tag; //discordの名前を取得
-        discord_id = interaction.user.id; //discordのidを取得
-        list0 = await showModal(interaction);
+
+        // 各ユーザーのデータをローカル変数で管理
+        const discord_name = interaction.user.tag; //discordの名前を取得
+        const discord_id = interaction.user.id; //discordのidを取得
+
+        const list0 = await showModal(interaction);
         if (list0.length == 0) return;
-        number_grade = await grade(interaction);
+
+        const number_grade = await grade(interaction);
         if (number_grade == null) return;
-        department = await academic_department(interaction);
+
+        const department = await academic_department(interaction);
         if (department == null) return;
-        _team = await team(interaction);
+
+        const _team = await team(interaction);
         if (_team.length == 0) return;
+
         await interaction.followUp({
             embeds: [{
                 title: "登録内容",
@@ -71,8 +72,9 @@ module.exports = {
                     }
                 ]
             }]
-        ,emphemeral: true});
-        //データベースに登録する
+        , ephemeral: true });
+
+        // データベースに登録する
         insertData(discord_id, discord_name, list0[0], list0[1], list0[2], number_grade, department, list0[3], _team.join(","), "none");
     },
 };
