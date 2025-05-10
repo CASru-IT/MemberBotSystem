@@ -29,6 +29,7 @@ module.exports = {
         if (department == null) return;
         const _team = await team(interaction);
         if (_team.length == 0) return;
+
         await interaction.followUp({
             embeds: [{
                 title: "登録内容",
