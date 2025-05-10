@@ -23,8 +23,7 @@ module.exports = {
             await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
             return;
         }
-        discord_name = interaction.user.tag; //discordの名前を取得
-        discord_id = interaction.user.id; //discordのidを取得
+        
         list0 = await showModal(interaction);
         if (list0.length == 0) return;
         number_grade = await grade(interaction);
@@ -39,19 +38,19 @@ module.exports = {
                 fields: [
                     {
                         name: "discordの名前",
-                        value: discord_name
+                        value: interaction.user.tag
                     },
                     {
                         name: "名前",
-                        value: list0[0]
-                    },
-                    {
-                        name: "ふりがな",
                         value: list0[1]
                     },
                     {
-                        name: "学籍番号",
+                        name: "ふりがな",
                         value: list0[2]
+                    },
+                    {
+                        name: "学籍番号",
+                        value: list0[0]
                     },
                     {
                         name: "メールアドレス",
@@ -73,6 +72,6 @@ module.exports = {
             }]
         ,emphemeral: true});
         //データベースに登録する
-        insertData(discord_id, discord_name, list0[0], list0[1], list0[2], number_grade, department, list0[3], _team.join(","), "none");
+        insertData(interaction.user.id, interaction.user.tag, list0[1], list0[2], list0[0], number_grade, department, list0[3], _team.join(","), "none");
     },
 };

@@ -10,7 +10,7 @@ async function showModal(interaction) {
 
     const text1 = new TextInputBuilder()//１つ目のテキストボックス
         .setCustomId('Input1')
-        .setLabel("discordの名前")
+        .setLabel("学籍番号")
         .setStyle(TextInputStyle.Short);
 
     const text2 = new TextInputBuilder()//２つ目のテキストボックス
@@ -58,7 +58,7 @@ async function showModal(interaction) {
         list.push(data4);
 
         //入力された情報を表示
-        await submitted.reply(`あなたの入力した情報:\ndiscordのid: ${data1}\n氏名: ${data2}\n氏名(ふりがな): ${data3}\nメール: ${data4}`);
+        await submitted.reply(`あなたの入力した情報:\n学籍番号: ${data1}\n氏名: ${data2}\n氏名(ふりがな): ${data3}\nメール: ${data4}`);
     } catch (error) {//エラーが発生した場合
         console.error(error);
         await interaction.followUp('時間切れです。追加情報が提供されませんでした。');
