@@ -6,12 +6,9 @@ const { showModal } = require('./register/form');
 const { grade } = require('./register/grade');
 const { academic_department } = require('./register/academic_department');
 const { team } = require('./register/team');
-var list0 = []; //ここに名前とふりがなと学籍番号とメールアドレスが入る
-var number_grade = null; //ここに学年が入る
-var department = ""; //ここに学類が入る
-var _team = []; //ここに班が入る
-var discord_name = ""; //ここにdiscordのidが入る
-var discord_id = ""; //ここにdiscordの名前が入る
+ //ここに名前とふりがなと学籍番号とメールアドレスが入る
+//ここに学年が入る
+
 const {insertData} = require('../sqlite.js'); //sqlite.jsから関数を読み込む
 
 module.exports = {
@@ -24,13 +21,13 @@ module.exports = {
             return;
         }
         
-        list0 = await showModal(interaction);
+        const list0 = await showModal(interaction);
         if (list0.length == 0) return;
-        number_grade = await grade(interaction);
+        const number_grade = await grade(interaction);
         if (number_grade == null) return;
-        department = await academic_department(interaction);
+        const department = await academic_department(interaction);
         if (department == null) return;
-        _team = await team(interaction);
+        const _team = await team(interaction);
         if (_team.length == 0) return;
         await interaction.followUp({
             embeds: [{
