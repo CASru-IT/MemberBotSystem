@@ -6,10 +6,8 @@ const { showModal } = require('./register/form');
 const { grade } = require('./register/grade');
 const { academic_department } = require('./register/academic_department');
 const { team } = require('./register/team');
- //ここに名前とふりがなと学籍番号とメールアドレスが入る
-//ここに学年が入る
-
 const {insertData} = require('../sqlite.js'); //sqlite.jsから関数を読み込む
+const { askCollegeName } = require('./register/form_other');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,13 +18,22 @@ module.exports = {
             await interaction.reply({ content: 'このコマンドはDMでのみ使用可能です。', ephemeral: true });
             return;
         }
-        
         const list0 = await showModal(interaction);
-        if (list0.length == 0) return;
+        if (!list0 || list0.length === 0) return;
         const number_grade = await grade(interaction);
         if (number_grade == null) return;
-        const department = await academic_department(interaction);
-        if (department == null) return;
+
+        let title = "学類";
+        let department = "error";
+        if (number_grade == 6) {
+            title = "大学名";
+            // ここで「直前のsubmitted Interaction」を渡す
+            department = await askCollegeName(interaction); // ここを修正
+            if (department == null) return;
+        } else {
+            department = await academic_department(interaction);
+            if (department == null) return;
+        }
         const _team = await team(interaction);
         if (_team.length == 0) return;
 
@@ -59,7 +66,7 @@ module.exports = {
                         value: number_grade
                     },
                     {
-                        name: "学類",
+                        name: title,
                         value: department
                     },
                     {

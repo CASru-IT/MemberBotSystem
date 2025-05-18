@@ -55,7 +55,10 @@ function insertData(discord_id, discord_name, name, furigana, student_number, gr
             academic_department = excluded.academic_department,
             mail_address = excluded.mail_address,
             team = excluded.team,
-            last_payment_date = excluded.last_payment_date;
+            last_payment_date = CASE 
+                WHEN Member_Information.last_payment_date = 'none' THEN excluded.last_payment_date
+                ELSE Member_Information.last_payment_date
+            END;
     `;
 
     const stmt = db.prepare(query);

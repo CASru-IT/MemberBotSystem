@@ -64,7 +64,13 @@ async function academic_department(interaction) {
                 .setValue('観光デザイン学類'),
             new StringSelectMenuOptionBuilder()
                 .setLabel('スマート創成科学類')
-                .setValue('スマート創成科学類')
+                .setValue('スマート創成科学類'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('総合教育部文系')
+                .setValue('総合教育部文系'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('総合教育部理系')
+                .setValue('総合教育部理系')
         );
 
     const row = new ActionRowBuilder()

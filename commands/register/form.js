@@ -43,7 +43,7 @@ async function showModal(interaction) {
     try {//モーダルが入力されるまで待機
         const submitted = await interaction.awaitModalSubmit({
             filter: i => i.customId === 'modalTest' && i.user.id === interaction.user.id,
-            time: 60000
+            time: 600000
         });
 
         //入力された情報を取得

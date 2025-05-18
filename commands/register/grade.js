@@ -18,8 +18,11 @@ async function grade(interaction) {
                 .setLabel('4年生')
                 .setValue('4'),
             new StringSelectMenuOptionBuilder()
-                .setLabel('院生またはその他')
-                .setValue('5')
+                .setLabel('院生')
+                .setValue('5'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('外部生またはその他')
+                .setValue('6')
         );
 
     const row = new ActionRowBuilder()
