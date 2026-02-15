@@ -1,5 +1,7 @@
 npm install discord.js
+
 npm install dotenv
+
 npm install better-sqlite3
 
 envファイルには
