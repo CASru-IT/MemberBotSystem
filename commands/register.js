@@ -8,6 +8,8 @@ const { academic_department } = require('./register/academic_department');
 const { team } = require('./register/team');
 const {insertData} = require('../sqlite.js'); //sqlite.jsから関数を読み込む
 const { askCollegeName } = require('./register/form_other');
+//性別を追加
+const { gender } = require('./register/gender');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,8 +36,12 @@ module.exports = {
             department = await academic_department(interaction);
             if (department == null) return;
         }
+        const _gender = await gender(interaction);
+        if (_gender == 0) return;
         const _team = await team(interaction);
         if (_team.length == 0) return;
+        //登録した日付を保存
+        const currentDate = new Date().toISOString(); // ISO形式の文字列に変換
 
         await interaction.followUp({
             embeds: [{
@@ -52,6 +58,10 @@ module.exports = {
                     {
                         name: "ふりがな",
                         value: list0[2]
+                    },
+                    {
+                        name: "性別",
+                        value: _gender
                     },
                     {
                         name: "学籍番号",
@@ -72,11 +82,15 @@ module.exports = {
                     {
                         name: "班",
                         value: _team.join(",")
+                    },
+                    {
+                        name: "登録日付",
+                        value: currentDate
                     }
                 ]
             }]
         ,emphemeral: true});
         //データベースに登録する
-        insertData(interaction.user.id, interaction.user.tag, list0[1], list0[2], list0[0], number_grade, department, list0[3], _team.join(","), "none");
+        insertData(interaction.user.id, interaction.user.tag, list0[1], list0[2], list0[0], number_grade, department, list0[3], _team.join(","), "none", _gender, currentDate);
     },
 };

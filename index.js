@@ -27,10 +27,21 @@ if (!fs.existsSync('data')) {
 }
 
 if (!fs.existsSync(allowedUsersPath)) {
-    const initialData = { allowed_users: [] };
+    const initialData = { allowed_users: [] ,admin_users: []}; // 初期データ
     fs.writeFileSync(allowedUsersPath, JSON.stringify(initialData, null, 4), 'utf8');
     console.log('allowedUsers.jsonを作成しました。');
 }
+
+const allowedUsersData = JSON.parse(fs.readFileSync(allowedUsersPath, 'utf8'));
+const allowedUsers = allowedUsersData.admin_users;
+if (allowedUsers == null) {
+    console.error('admin_usersがallowedUsers.jsonに存在しません。追加します。');
+    allowedUsersData.admin_users = [];
+    fs.writeFileSync(allowedUsersPath, JSON.stringify(allowedUsersData, null, 4), 'utf8');
+    console.log('admin_usersをallowedUsers.jsonに追加しました。');
+}
+
+
 
 //コマンドファイルを読み込む
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
