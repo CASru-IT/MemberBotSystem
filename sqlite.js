@@ -323,7 +323,12 @@ async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
     }
 }
 
-
+async function DeleteAllQRCodes() {
+    const deleteAllQRCodesQuery = db.prepare(`
+        DELETE FROM QRCode;
+    `);
+    deleteAllQRCodesQuery.run();
+}
 
 module.exports = {
     executeQuery,
@@ -335,5 +340,6 @@ module.exports = {
     generateRandomString,
     insertQRCode,
     generateAllQRCodes,
-    generateCustomQRCode
+    generateCustomQRCode,
+    DeleteAllQRCodes
 };

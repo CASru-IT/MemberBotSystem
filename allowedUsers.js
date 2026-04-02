@@ -12,7 +12,11 @@ function isUserAllowed(username, adminCheck = false) {
     try {
         // allowedUsers.jsonを読み込む
         const allowedUsersData = JSON.parse(fs.readFileSync(allowedUsersPath, 'utf8'));
-        const allowedUsers = adminCheck ? allowedUsersData.admin_users : allowedUsersData.allowed_users;
+        //const allowedUsers = adminCheck ? allowedUsersData.admin_users : allowedUsersData.allowed_users;
+        const allowedUsers = allowedUsersData.admin_users;
+        if (!adminCheck) { // adminCheckがfalseの場合はallowed_usersもチェックする
+            allowedUsers.push(...allowedUsersData.allowed_users);
+        }
 
         // ユーザー名がリストに含まれているか確認
         return allowedUsers.includes(username);

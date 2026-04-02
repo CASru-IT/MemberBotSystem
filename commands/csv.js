@@ -28,17 +28,19 @@ module.exports = {
             }
 
             // CSVヘッダーを作成
-            const headers = ['discord_id', 'discord_name', 'name', 'furigana', 'student_number', 'grade', 'academic_department', 'mail_address', 'team', 'last_payment_date'];
+            const headers = ['discord_id', 'discord_name', 'name', 'furigana', "gender", 'student_number', 'grade', 'academic_department', 'mail_address', 'team', "registered_date", 'last_payment_date'];
             const rows = data.map(row => [
                 row.discord_id,
                 row.discord_name,
                 row.name,
                 row.furigana,
+                row.gender,
                 row.student_number,
                 row.grade,
                 row.academic_department,
                 row.mail_address,
                 row.team,
+                row.registered_date,
                 row.last_payment_date
             ]);
 
