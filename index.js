@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { Client, GatewayIntentBits, Partials, ApplicationCommandType, ApplicationCommandOptionType, Collection, ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ApplicationCommandType, ApplicationCommandOptionType, Collection, ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 require('dotenv').config();
 const allowedUsersPath = 'data/allowedUsers.json';
 //必要なモジュールを読み込む
@@ -65,7 +65,16 @@ client.on('interactionCreate', async interaction => { //メッセージを受け
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        await interaction.followUp({ content: 'コマンド実行時にエラーが発生しました', ephemeral: true });
+        const message = { content: 'コマンド実行時にエラーが発生しました', flags: MessageFlags.Ephemeral };
+        try {
+            if (interaction.deferred || interaction.replied) {
+                await interaction.followUp(message);
+            } else {
+                await interaction.reply(message);
+            }
+        } catch (replyError) {
+            console.error('エラー通知の送信に失敗しました:', replyError);
+        }
     }
 });
 

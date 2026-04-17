@@ -86,7 +86,7 @@ function insertData(discord_id, discord_name, name, furigana, student_number, gr
     `;
 
     const stmt = db.prepare(query);
-    stmt.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
+    stmt.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date, gender, last_register_date);
 }
 
 // データを取得する関数を定義します
