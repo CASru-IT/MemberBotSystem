@@ -6,6 +6,7 @@ const os = require('os');
 const { randomUUID } = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const { updatePaymentByQRCode } = require('../sqlite');
 
 const execFileAsync = promisify(execFile);
 
@@ -64,9 +65,15 @@ module.exports = {
                         });
                         return;
                     }
-
+                    
                     await interaction.followUp({
                         content: `読み取り結果: ${decodeResult.data}`,
+                        flags: MessageFlags.Ephemeral,
+                    });
+
+                    const paymentResult = updatePaymentByQRCode(interaction.user.id, decodeResult.data);
+                    await interaction.followUp({
+                        content: paymentResult.message,
                         flags: MessageFlags.Ephemeral,
                     });
                 } catch (error) {
@@ -119,15 +126,8 @@ async function decodeQrWithExternalDecoder(attachment) {
     let tempFilePath;
     try {
         tempFilePath = await saveAttachmentToTemp(imageUrl, attachment.name);
-        const { stdout } = await execFileAsync('zbarimg', ['--quiet', '--raw', tempFilePath], {
-            windowsHide: true,
-            timeout: 5000,
-        });
-
-        const decodedText = stdout
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .find((line) => line.length > 0);
+        const { stdout } = await runZbarimg(tempFilePath);
+        const decodedText = extractDecodedText(stdout);
 
         if (!decodedText) {
             return {
@@ -141,10 +141,46 @@ async function decodeQrWithExternalDecoder(attachment) {
             data: decodedText,
         };
     } catch (error) {
-        if (error.code === 'ENOENT') {
+        if (error.code === 'ZBARIMG_WSL_DISTRO_NOT_FOUND') {
             return {
                 ok: false,
-                message: 'zbarimg が見つかりません。zbar をインストールしてください。',
+                message: '指定したWSLディストリが見つかりません。環境変数 ZBARIMG_WSL_DISTRO を確認してください。',
+            };
+        }
+
+        if (error.code === 'ZBARIMG_EXECUTABLE_NOT_FOUND') {
+            return {
+                ok: false,
+                message: '指定した zbarimg 実行ファイルが見つかりません。環境変数 ZBARIMG_EXECUTABLE を確認してください。',
+            };
+        }
+
+        if (error.code === 'ENOENT' || error.code === 'ZBARIMG_NOT_FOUND') {
+            return {
+                ok: false,
+                message: 'zbarimg が見つかりません。PATHを通すか、環境変数 ZBARIMG_EXECUTABLE に実行ファイルの絶対パスを指定してください。',
+            };
+        }
+
+        const stderrText = sanitizeWslStderr(normalizeErrorText(error.stderr));
+        const stdoutText = normalizeErrorText(error.stdout);
+        const mergedText = `${stderrText}\n${stdoutText}`.trim();
+        const decodedText = extractDecodedText(stdoutText);
+
+        if (decodedText) {
+            return {
+                ok: true,
+                data: decodedText,
+            };
+        }
+
+        if (
+            error.code === 4 ||
+            /No symbol|no symbol|scanned 0 symbols|not found a symbol/i.test(mergedText)
+        ) {
+            return {
+                ok: false,
+                message: 'QRコードを読み取れませんでした。画像を明るく鮮明にして再度お試しください。',
             };
         }
 
@@ -155,9 +191,16 @@ async function decodeQrWithExternalDecoder(attachment) {
             };
         }
 
+        const briefDetail = mergedText
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .find((line) => line.length > 0);
+
         return {
             ok: false,
-            message: 'QRコード解析中にエラーが発生しました。',
+            message: briefDetail
+                ? `QRコード解析中にエラーが発生しました: ${briefDetail}`
+                : 'QRコード解析中にエラーが発生しました。',
         };
     } finally {
         if (tempFilePath) {
@@ -185,4 +228,122 @@ async function safeDeleteTempFile(filePath) {
     } catch (_) {
         // 一時ファイル削除失敗は致命的ではない
     }
+}
+
+function normalizeErrorText(value) {
+    if (typeof value === 'string') {
+        return value;
+    }
+    if (Buffer.isBuffer(value)) {
+        return value.toString('utf8');
+    }
+    return '';
+}
+
+async function runZbarimg(filePath) {
+    const executable = (process.env.ZBARIMG_EXECUTABLE || '').trim();
+
+    if (executable) {
+        try {
+            return await execFileAsync(executable, ['--quiet', '--raw', filePath], {
+                windowsHide: true,
+                timeout: 5000,
+            });
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                const wrapped = new Error('Configured zbarimg executable was not found.');
+                wrapped.code = 'ZBARIMG_EXECUTABLE_NOT_FOUND';
+                throw wrapped;
+            }
+            throw error;
+        }
+    }
+
+    try {
+        return await execFileAsync('zbarimg', ['--quiet', '--raw', filePath], {
+            windowsHide: true,
+            timeout: 5000,
+        });
+    } catch (error) {
+        // Windowsでzbarimgが見つからない場合、WSL上のzbarimgを試す。
+        if (process.platform === 'win32' && error.code === 'ENOENT') {
+            return runZbarimgViaWsl(filePath);
+        }
+        throw error;
+    }
+}
+
+async function runZbarimgViaWsl(windowsPath) {
+    try {
+        const linuxPath = convertWindowsPathToWslPath(windowsPath);
+        if (!linuxPath) {
+            const error = new Error('Failed to convert path for WSL.');
+            error.code = 'ZBARIMG_NOT_FOUND';
+            throw error;
+        }
+
+        const distroName = process.env.ZBARIMG_WSL_DISTRO || process.env.WSL_DISTRO_NAME;
+        const wslArgs = distroName
+            ? ['-d', distroName, 'sh', '-lc', `zbarimg --quiet --raw ${shellEscapeForSh(linuxPath)}`]
+            : ['sh', '-lc', `zbarimg --quiet --raw ${shellEscapeForSh(linuxPath)}`];
+
+        return await execFileAsync('wsl.exe', wslArgs, {
+            windowsHide: true,
+            timeout: 5000,
+        });
+    } catch (error) {
+        const stderrText = sanitizeWslStderr(normalizeErrorText(error.stderr));
+        if (/distribution.*not found|There is no distribution with the supplied name/i.test(stderrText)) {
+            const wrapped = new Error('Configured WSL distribution was not found.');
+            wrapped.code = 'ZBARIMG_WSL_DISTRO_NOT_FOUND';
+            throw wrapped;
+        }
+
+        if (
+            error.code === 'ENOENT' ||
+            error.code === 127 ||
+            /not found|command not found|No such file/i.test(stderrText)
+        ) {
+            const wrapped = new Error('zbarimg not found in both native env and WSL.');
+            wrapped.code = 'ZBARIMG_NOT_FOUND';
+            throw wrapped;
+        }
+        throw error;
+    }
+}
+
+function sanitizeWslStderr(text) {
+    return text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .filter((line) => !/^wsl:\s+Unknown key\s+'.+'\s+in\s+\/etc\/wsl\.conf:\d+$/i.test(line))
+        .join('\n');
+}
+
+function extractDecodedText(text) {
+    return text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find((line) => line.length > 0);
+}
+
+function convertWindowsPathToWslPath(windowsPath) {
+    if (typeof windowsPath !== 'string' || windowsPath.length < 3) {
+        return '';
+    }
+
+    const normalized = windowsPath.replace(/\\/g, '/');
+    const driveMatch = normalized.match(/^([a-zA-Z]):\/(.*)$/);
+    if (!driveMatch) {
+        return normalized;
+    }
+
+    const driveLetter = driveMatch[1].toLowerCase();
+    const rest = driveMatch[2];
+    return `/mnt/${driveLetter}/${rest}`;
+}
+
+function shellEscapeForSh(value) {
+    return `'${value.replace(/'/g, `'"'"'`)}'`;
 }

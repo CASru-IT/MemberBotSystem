@@ -72,7 +72,7 @@ module.exports = {
                 row.academic_department,
                 row.mail_address,
                 row.team,
-                row.registered_date,
+                row.last_register_date,
                 row.last_payment_date
             ]);
 
