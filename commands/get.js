@@ -38,6 +38,10 @@ module.exports = {
                         value: data.furigana || "未設定"
                     },
                     {
+                        name: "性別",
+                        value: data.gender || "未設定"
+                    },
+                    {
                         name: "学籍番号",
                         value: data.student_number || "未設定"
                     },
@@ -56,6 +60,10 @@ module.exports = {
                     {
                         name: "班",
                         value: data.team || "未設定"
+                    },
+                    {
+                        name: "登録日",
+                        value: data.registered_date || "未登録"
                     },
                     {
                         name: "最終支払日",

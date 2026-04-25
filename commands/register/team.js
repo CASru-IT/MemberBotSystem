@@ -10,7 +10,9 @@ async function team(interaction) {
         'button_6': 'ゲーム班',
         'button_7': 'DTM班',
         'button_8': '漫画班',
-        'button_9': 'アニメ班'
+        'button_9': 'アニメ班',
+        'button_10': 'ボドゲ班',
+        'button_11': '模型班'
     };
 
     // セレクターメニューを作成
