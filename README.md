@@ -152,6 +152,7 @@ docker compose logs -f bot
 - `CLIENT_ID`      : DiscordアプリケーションのクライアントID
 - `GUILD_ID`       : コマンドを登録するギルドID
 - `PASSWORD`       : `/admin` 実行時に必要なパスワード
+- `ZBARIMG_EXECUTABLE` : `zbarimg` 実行ファイルの絶対パス。Docker運用では `/usr/bin/zbarimg` を指定します
 
 `PASSWORD` は、`/csv` や `/team_csv`、`/deleteinfo`、`/qrcode` などの重要コマンドを実行できるユーザーを許可リストに追加するために使います。
 
