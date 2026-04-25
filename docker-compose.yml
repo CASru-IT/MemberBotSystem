@@ -9,6 +9,12 @@ services:
       - ./qrcodes:/app/qrcodes
     env_file:
       - .env
+    environment:
+      - DISCORD_TOKEN:${DISCORD_TOKEN}
+      - CLIENT_ID:${CLIENT_ID}
+      - GUILD_ID:${GUILD_ID}
+      - PASSWORD:${PASSWORD}
+      - ZBARIMG_EXECUTABLE:${ZBARIMG_EXECUTABLE}
     restart: always
 
 volumes:
