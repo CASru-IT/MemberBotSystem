@@ -1,0 +1,44 @@
+//このファイルは、/registerコマンドを処理します。
+const { SlashCommandBuilder } = require('@discordjs/builders'); // SlashCommandBuilderを読み込む
+const { getDataBydiscord_id } = require('../sqlite.js'); // sqlite.jsから関数を読み込む
+const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('announce_register') // コマンド名を設定
+        .setDescription('まだ登録していない人に登録を催促します'), // コマンドの説明を設定
+    async execute(interaction) {
+        // コマンド実行者のDiscord IDを取得
+        const discord_id = interaction.user.id;
+        if (!isUserAllowed(interaction.user.id, true)) {
+        await interaction.reply({
+          content: 'このコマンドは管理者のみ実行できます。',
+          ephemeral: true,
+        });
+        return;
+      }
+        const namelist = [];
+        const members = await interaction.guild.members.fetch();
+
+    await Promise.allSettled(
+      members.map(async (member) => {
+        if (member.user.bot) return;
+
+        const data = getDataBydiscord_id(member.user.id); // 同期戻り値
+        if (!data) {
+          try {
+            await member.send('登録がまだのようです。/register コマンドを使用して登録を完了してください。');
+            namelist.push(member.user.tag);
+          } catch (_) {
+            //failedIds.push(member.user.id); // DM拒否など
+          }
+        }
+      })
+    );
+        await interaction.reply({ content: '登録していない人にDMで登録を催促しました。', ephemeral: true });
+
+        await interaction.editReply({
+            content: `登録を催促したユーザーの名前: ${namelist.join(', ')}`
+        })
+    }
+};

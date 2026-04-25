@@ -18,10 +18,32 @@ CREATE TABLE IF NOT EXISTS Member_Information (
   academic_department TEXT NOT NULL,
   mail_address TEXT NOT NULL,
   team TEXT NOT NULL,
-  last_payment_date TEXT NOT NULL
+  last_payment_date TEXT NOT NULL,
+  gender TEXT NOT NULL DEFAULT '未登録',
+  last_register_date TEXT NOT NULL DEFAULT 'none'
 );
 `);
 createTweetTableQuery.run();
+
+function ensureGenderColumnExists() {
+    const pragmaQuery = db.prepare(`PRAGMA table_info(Member_Information);`);
+    const columns = pragmaQuery.all();
+    const genderColumn = columns.find(column => column.name === 'gender');
+    
+    if (!genderColumn) {
+        //genderとlast_register_dateカラムを追加する
+        const alterTableQuery = db.prepare(`ALTER TABLE Member_Information ADD COLUMN gender TEXT NOT NULL DEFAULT '未登録';`);
+        const alterLastRegisterDateQuery = db.prepare(`ALTER TABLE Member_Information ADD COLUMN last_register_date TEXT NOT NULL DEFAULT 'none';`);
+        alterTableQuery.run();
+        alterLastRegisterDateQuery.run();
+        console.log('genderカラムを追加しました。');
+    } else {
+        console.log('genderカラムはすでに存在しています。');
+    }
+}
+
+// genderカラムが存在しない場合は追加する
+ensureGenderColumnExists();
 
 const createTweetTableQuery2 = db.prepare(`
   CREATE TABLE IF NOT EXISTS QRCode (
@@ -40,12 +62,12 @@ function executeQuery(query, params) {
 }
 
 // データを挿入する関数を定義します
-function insertData(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date) {
-    console.log(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
+function insertData(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date, gender, last_register_date) {
+    console.log(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date, gender, last_register_date);
 
     const query = `
-        INSERT INTO Member_Information (discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Member_Information (discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date, gender, last_register_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(discord_id) DO UPDATE SET
             discord_name = excluded.discord_name,
             name = excluded.name,
@@ -55,6 +77,8 @@ function insertData(discord_id, discord_name, name, furigana, student_number, gr
             academic_department = excluded.academic_department,
             mail_address = excluded.mail_address,
             team = excluded.team,
+            gender = excluded.gender,
+            last_register_date = excluded.last_register_date,
             last_payment_date = CASE 
                 WHEN Member_Information.last_payment_date = 'none' THEN excluded.last_payment_date
                 ELSE Member_Information.last_payment_date
@@ -62,7 +86,7 @@ function insertData(discord_id, discord_name, name, furigana, student_number, gr
     `;
 
     const stmt = db.prepare(query);
-    stmt.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date);
+    stmt.run(discord_id, discord_name, name, furigana, student_number, grade, academic_department, mail_address, team, last_payment_date, gender, last_register_date);
 }
 
 // データを取得する関数を定義します
@@ -124,6 +148,86 @@ function insertQRCode(discord_id, qr_code, price) {
     insertQRCodeQuery.run(discord_id, qr_code, price);
 }
 
+function getQRCodeByCode(qrCode) {
+    const query = db.prepare(`
+        SELECT * FROM QRCode WHERE qr_code = ?;
+    `);
+    return query.get(qrCode);
+}
+
+function updatePaymentByQRCode(discordId, qrCode) {
+    const qrRow = getQRCodeByCode(qrCode);
+    if (!qrRow) {
+        return {
+            ok: false,
+            message: 'QRコードがデータベースに存在しません。',
+            code: 'QR_NOT_FOUND',
+        };
+    }
+
+    if (qrRow.discord_id !== 'none') {
+        return {
+            ok: false,
+            message: 'このQRコードはすでに使用されています。',
+            code: 'QR_ALREADY_USED',
+        };
+    }
+
+    const memberRow = getDataBydiscord_id(discordId);
+    if (!memberRow) {
+        return {
+            ok: false,
+            message: '会員情報が見つかりませんでした。',
+            code: 'MEMBER_NOT_FOUND',
+        };
+    }
+
+    const grade = Number(memberRow.grade);
+    const price = Number(qrRow.price);
+
+    if (grade <= 4 && price !== 5000) {
+        return {
+            ok: false,
+            message: 'このQRコードは院生または外部生用です。役員に問い合わせてください。',
+            code: 'PRICE_MISMATCH_UNDERGRAD',
+        };
+    }
+
+    if (grade > 4 && price !== 2500) {
+        return {
+            ok: false,
+            message: 'このQRコードは学部生用です。役員に問い合わせてください。',
+            code: 'PRICE_MISMATCH_GRAD',
+        };
+    }
+
+    const currentDate = new Date().toISOString();
+
+    const updatePaymentTransaction = db.transaction(() => {
+        db.prepare(`
+            UPDATE Member_Information
+            SET last_payment_date = ?
+            WHERE discord_id = ?;
+        `).run(currentDate, discordId);
+
+        db.prepare(`
+            UPDATE QRCode
+            SET discord_id = ?
+            WHERE qr_code = ?;
+        `).run(discordId, qrCode);
+    });
+
+    updatePaymentTransaction();
+
+    return {
+        ok: true,
+        message: `${price}円の支払いが完了しました。`,
+        code: 'PAYMENT_UPDATED',
+        paymentDate: currentDate,
+        price,
+    };
+}
+
 // データベース内のすべてのQRコードをPNGファイルとして生成する関数
 function generateAllQRCodes(outputDir = './qrcodes') {
     // ディレクトリが存在しない場合は作成
@@ -156,7 +260,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
                 width: 500,
                 margin: 2,
             });
-            number = id; // QRコードのIDを取得
+            const number = id; // QRコードのIDを取得
             // Canvasを作成
             /*const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
             const ctx = canvas.getContext('2d');
@@ -239,7 +343,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
 
 async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
     try {
-        number = db.prepare(`
+        const number = db.prepare(`
             SELECT MAX(id) FROM QRCode;
         `).get().max; // QRコードのIDを取得
         outputFilePath = outputFilePath.replace(/\.png$/, `_${number}.png`); // 会員番号をファイル名に追加
@@ -299,7 +403,12 @@ async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
     }
 }
 
-
+async function DeleteAllQRCodes() {
+    const deleteAllQRCodesQuery = db.prepare(`
+        DELETE FROM QRCode;
+    `);
+    deleteAllQRCodesQuery.run();
+}
 
 module.exports = {
     executeQuery,
@@ -310,6 +419,9 @@ module.exports = {
     getDataByTeam,
     generateRandomString,
     insertQRCode,
+    getQRCodeByCode,
+    updatePaymentByQRCode,
     generateAllQRCodes,
-    generateCustomQRCode
+    generateCustomQRCode,
+    DeleteAllQRCodes
 };

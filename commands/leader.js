@@ -7,11 +7,11 @@ const allowedUsersPath = 'data/allowedUsers.json';
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('admin')
-        .setDescription('管理者用コマンド。ユーザーを管理者リストに追加します。')
+        .setName('groupleader')
+        .setDescription('班長用コマンド。ユーザーを許可リストに追加します。')
         .addStringOption(option =>
             option.setName('password')
-                .setDescription('管理者パスワードを入力してください')
+                .setDescription('班長パスワードを入力してください')
                 .setRequired(true)
         ),
     async execute(interaction) {
@@ -22,7 +22,7 @@ module.exports = {
             const discordId = interaction.user.id; // 実行者のDiscord IDを取得
 
             // パスワードを検証
-            if (password !== process.env.ADMIN_PASSWORD) {
+            if (password !== process.env.PASSWORD) {
                 await interaction.reply({ content: 'パスワードが間違っています。', ephemeral: true });
                 return;
             }
@@ -31,19 +31,19 @@ module.exports = {
             const allowedUsersData = JSON.parse(fs.readFileSync(allowedUsersPath, 'utf8'));
 
             // Discord IDがすでにリストに存在するか確認
-            if (allowedUsersData.admin_users.includes(discordId)) {
-                await interaction.reply({ content: 'あなたはすでに管理者リストに追加されています。', ephemeral: true });
+            if (allowedUsersData.allowed_users.includes(discordId)) {
+                await interaction.reply({ content: 'あなたはすでに班長リストに追加されています。', ephemeral: true });
                 return;
             }
 
             // Discord IDをリストに追加
-            allowedUsersData.admin_users.push(discordId);
+            allowedUsersData.allowed_users.push(discordId);
 
             // JSONファイルを更新
             fs.writeFileSync(allowedUsersPath, JSON.stringify(allowedUsersData, null, 4), 'utf8');
 
             // 成功メッセージを返信
-            await interaction.reply({ content: `あなたを管理者リストに追加しました。`, ephemeral: true });
+            await interaction.reply({ content: `あなたを班長リストに追加しました。`, ephemeral: true });
         } catch (error) {
             console.error('エラーが発生しました:', error);
             await interaction.reply({ content: 'エラーが発生しました。管理者に連絡してください。', ephemeral: true });
