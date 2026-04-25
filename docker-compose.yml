@@ -15,6 +15,7 @@ services:
       - GUILD_ID:${GUILD_ID}
       - PASSWORD:${PASSWORD}
       - ZBARIMG_EXECUTABLE:${ZBARIMG_EXECUTABLE}
+      - ADMIN_PASSWORD:${ADMIN_PASSWORD}
     restart: always
 
 volumes:
