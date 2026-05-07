@@ -4,7 +4,7 @@ const { updatePaymentByQRCode } = require('../sqlite');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('pay')
+        .setName('pay_manually')
         .setDescription('QRコードを読み取り、会費の支払いを完了します。'),
     async execute(interaction) {
         try {

@@ -71,6 +71,7 @@ module.exports = {
 
       // QRコードのリセット処理をここに実装
       await DeleteAllQRCodes();
+      await DeleteQRCodesImages();// 画像も削除
 
       await buttonInteraction.update({
         content: 'QRコードをリセットしました。',
@@ -95,3 +96,25 @@ module.exports = {
     }
   },
 };
+
+async function DeleteQRCodesImages() {
+  const qrCodesDir = 'qrcodes';
+  try {
+    if (!fs.existsSync(qrCodesDir)) return;
+    const files = await fs.promises.readdir(qrCodesDir);
+    for (const file of files) {
+      // .gitkeep は残す
+      if (file === '.gitkeep') continue;
+      const filePath = `${qrCodesDir}/${file}`;
+      try {
+        const stat = await fs.promises.stat(filePath);
+        if (stat.isFile()) await fs.promises.unlink(filePath);
+      } catch (e) {
+        console.error('Failed to delete file:', filePath, e);
+      }
+    }
+  } catch (err) {
+    console.error('DeleteQRCodesImages error:', err);
+  }
+}
+  

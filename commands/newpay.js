@@ -12,8 +12,8 @@ const execFileAsync = promisify(execFile);
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('newpay')
-        .setDescription('DMで受信した画像のQRコードを外部デコーダーで読み取ります。'),
+        .setName('pay')
+        .setDescription('会費を支払います。DMで受信した画像のQRコードを外部デコーダーで読み取ります。'),
     async execute(interaction) {
         try {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -132,7 +132,7 @@ async function decodeQrWithExternalDecoder(attachment) {
         if (!decodedText) {
             return {
                 ok: false,
-                message: 'QRコードを読み取れませんでした。',
+                message: 'QRコードを読み取れませんでした。少しQRコードを遠ざけて、画面中央にQRコードが収まるようにして、明るい場所で再度写真を撮ってみてください。',
             };
         }
 
@@ -180,7 +180,7 @@ async function decodeQrWithExternalDecoder(attachment) {
         ) {
             return {
                 ok: false,
-                message: 'QRコードを読み取れませんでした。画像を明るく鮮明にして再度お試しください。',
+                message: 'QRコードを読み取れませんでした。少しQRコードを遠ざけて、画面中央にQRコードが収まるようにして、明るい場所で再度写真を撮ってみてください。',
             };
         }
 

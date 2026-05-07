@@ -319,7 +319,7 @@ function generateAllQRCodes(outputDir = './qrcodes') {
 
         // QRコードの説明を描画
         ctx.fillText('QRコードを写真に撮って', 50, 300);
-        ctx.fillText('Casる-botに送ってください。', 50, 340);
+        ctx.fillText('会員情報管理BOTに送ってください。', 50, 340);
 
         // 最終的な画像を保存
         const out = fs.createWriteStream(outputFilePath);
@@ -385,7 +385,7 @@ async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
 
         // QRコードの説明を描画
         ctx.fillText('QRコードを写真に撮って', 20, 300);
-        ctx.fillText('Casる-botに送ってください。', 20, 340);
+        ctx.fillText('会員情報管理BOTに送ってください。', 20, 340);
 
         // 最終的な画像を保存
         const out = fs.createWriteStream(outputFilePath);
