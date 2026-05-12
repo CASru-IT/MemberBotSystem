@@ -46,6 +46,9 @@ async function showModal(interaction) {
             time: 600000
         });
 
+        // 相互作用トークンを確保して Unknown interaction を防ぐ
+        await submitted.deferReply();
+
         //入力された情報を取得
         const data1 = submitted.fields.getTextInputValue('Input1');
         const data2 = submitted.fields.getTextInputValue('Input2');
@@ -58,7 +61,7 @@ async function showModal(interaction) {
         list.push(data4);
 
         //入力された情報を表示
-        await submitted.reply(`あなたの入力した情報:\n学籍番号: ${data1}\n氏名: ${data2}\n氏名(ふりがな): ${data3}\nメール: ${data4}`);
+        await submitted.editReply(`あなたの入力した情報:\n学籍番号: ${data1}\n氏名: ${data2}\n氏名(ふりがな): ${data3}\nメール: ${data4}`);
     } catch (error) {//エラーが発生した場合
         console.error(error);
         await interaction.followUp('時間切れです。追加情報が提供されませんでした。');

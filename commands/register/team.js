@@ -46,6 +46,9 @@ async function team(interaction) {
             time: 60000 // 60秒間収集
         });
 
+        // 相互作用トークンを確保して Unknown interaction を防ぐ
+        await collected.defer();
+
         const selectedValues = collected.values; // 選択された値を取得
         selectedValues.forEach((value) => {
             const teamName = teamNames[value];
@@ -54,7 +57,7 @@ async function team(interaction) {
             }
         });
 
-        await collected.reply({ content: `選択された班: ${collectedTeams.join(', ')}`});
+        await collected.followUp({ content: `選択された班: ${collectedTeams.join(', ')}`});
         return collectedTeams; // 選択された班の配列を返す
     } catch (error) {
         if (error.code === 'InteractionCollectorError') {
