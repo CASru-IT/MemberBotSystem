@@ -1,7 +1,9 @@
 require('dotenv').config(); // dotenvを読み込む
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const fs = require('fs');
 const { generateRandomString, insertQRCode, generateAllQRCodes,generateCustomQRCode } = require('../sqlite.js'); // sqlite.jsからランダム文字列生成関数を読み込む
 const { isUserAllowed } = require('../allowedUsers.js'); // allowedUsers.jsをインポート
+const path = require('path');
 
 const Number = 30; // QRコードの文字数
 
@@ -26,7 +28,7 @@ module.exports = {
     async execute(interaction) {
         try {
             // 実行者のユーザー名をチェック
-            if (!isUserAllowed(interaction.user.id)) {
+            if (!isUserAllowed(interaction.user.id, true)) { // 管理者のみ許可
                 await interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
                 return;
             }
@@ -56,10 +58,16 @@ module.exports = {
             // すべてのQRコードをPNG形式で生成
             const generatedFiles = await generateAllQRCodes();
 
+            const qrCodeListPath = path.join(process.cwd(), `generated-qrcodes-${Date.now()}.txt`);
+            fs.writeFileSync(qrCodeListPath, qrCodes.join('\n'), 'utf8');
+
             // 結果を返信
             await interaction.editReply({
-                content: `生成されたQRコード:\n${qrCodes.join('\n')}\nPNGファイルが生成されました (${generatedFiles.length} 件)。`
+                content: `QRコードを${qrCodes.length}件生成しました。PNGファイルも${generatedFiles.length}件生成されました。QRコード一覧は添付ファイルを確認してください。`,
+                files: [qrCodeListPath]
             });
+
+            fs.unlinkSync(qrCodeListPath);
         } catch (error) {
             console.error(error);
 

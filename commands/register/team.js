@@ -47,7 +47,7 @@ async function team(interaction) {
         });
 
         // 相互作用トークンを確保して Unknown interaction を防ぐ
-        await collected.defer();
+        await collected.deferUpdate();
 
         const selectedValues = collected.values; // 選択された値を取得
         selectedValues.forEach((value) => {

@@ -88,7 +88,7 @@ async function academic_department(interaction) {
         });
 
         // 相互作用トークンを確保して Unknown interaction を防ぐ
-        await collected.defer();
+        await collected.deferUpdate();
         await collected.followUp(`${collected.values[0]}が選択されました`);
 
         // セレクターを無効化する
