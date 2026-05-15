@@ -4,6 +4,7 @@ const fs = require('fs');
 const { createCanvas, loadImage } = require('canvas'); // canvasライブラリを使用
 
 const db = new Database('data/casru.db');
+db.pragma('busy_timeout = 5000');  // SQLiteの同時書き込み時に5秒待機
 
 // テーブルが存在しない場合にのみ作成する
 const createTweetTableQuery = db.prepare(`
@@ -156,76 +157,67 @@ function getQRCodeByCode(qrCode) {
 }
 
 function updatePaymentByQRCode(discordId, qrCode) {
-    const qrRow = getQRCodeByCode(qrCode);
-    if (!qrRow) {
-        return {
-            ok: false,
-            message: 'QRコードがデータベースに存在しません。',
-            code: 'QR_NOT_FOUND',
-        };
+    try {
+        const updatePaymentTransaction = db.transaction(() => {
+            // ✅ トランザクション内ですべてのチェックを実行
+            const qrRow = db.prepare(`
+                SELECT * FROM QRCode WHERE qr_code = ?;
+            `).get(qrCode);
+
+            if (!qrRow) {
+                throw { ok: false, message: 'QRコードがデータベースに存在しません。', code: 'QR_NOT_FOUND' };
+            }
+
+            if (qrRow.discord_id !== 'none') {
+                throw { ok: false, message: 'このQRコードはすでに使用されています。', code: 'QR_ALREADY_USED' };
+            }
+
+            const memberRow = db.prepare(`
+                SELECT * FROM Member_Information WHERE discord_id = ?;
+            `).get(discordId);
+
+            if (!memberRow) {
+                throw { ok: false, message: '会員情報が見つかりませんでした。', code: 'MEMBER_NOT_FOUND' };
+            }
+
+            const grade = Number(memberRow.grade);
+            const price = Number(qrRow.price);
+
+            if (grade <= 4 && price !== 5000) {
+                throw { ok: false, message: 'このQRコードは院生または外部生用です。役員に問い合わせてください。', code: 'PRICE_MISMATCH_UNDERGRAD' };
+            }
+
+            if (grade > 4 && price !== 2500) {
+                throw { ok: false, message: 'このQRコードは学部生用です。役員に問い合わせてください。', code: 'PRICE_MISMATCH_GRAD' };
+            }
+
+            const currentDate = new Date().toISOString();
+
+            // ✅ ここで初めてデータベースを更新
+            db.prepare(`
+                UPDATE Member_Information
+                SET last_payment_date = ?
+                WHERE discord_id = ?;
+            `).run(currentDate, discordId);
+
+            db.prepare(`
+                UPDATE QRCode
+                SET discord_id = ?
+                WHERE qr_code = ?;
+            `).run(discordId, qrCode);
+
+            return { ok: true, message: `${price}円の支払いが完了しました。`, code: 'PAYMENT_UPDATED', paymentDate: currentDate, price };
+        });
+
+        return updatePaymentTransaction();
+    } catch (error) {
+        if (error && error.ok === false) {
+            return error; // バリデーションエラー
+        }
+        // SQLITE_BUSY などのDBエラー
+        console.error('updatePaymentByQRCode - DBエラー:', error);
+        return { ok: false, message: '処理中にエラーが発生しました。もう一度お試しください。', code: 'DB_ERROR' };
     }
-
-    if (qrRow.discord_id !== 'none') {
-        return {
-            ok: false,
-            message: 'このQRコードはすでに使用されています。',
-            code: 'QR_ALREADY_USED',
-        };
-    }
-
-    const memberRow = getDataBydiscord_id(discordId);
-    if (!memberRow) {
-        return {
-            ok: false,
-            message: '会員情報が見つかりませんでした。',
-            code: 'MEMBER_NOT_FOUND',
-        };
-    }
-
-    const grade = Number(memberRow.grade);
-    const price = Number(qrRow.price);
-
-    if (grade <= 4 && price !== 5000) {
-        return {
-            ok: false,
-            message: 'このQRコードは院生または外部生用です。役員に問い合わせてください。',
-            code: 'PRICE_MISMATCH_UNDERGRAD',
-        };
-    }
-
-    if (grade > 4 && price !== 2500) {
-        return {
-            ok: false,
-            message: 'このQRコードは学部生用です。役員に問い合わせてください。',
-            code: 'PRICE_MISMATCH_GRAD',
-        };
-    }
-
-    const currentDate = new Date().toISOString();
-
-    const updatePaymentTransaction = db.transaction(() => {
-        db.prepare(`
-            UPDATE Member_Information
-            SET last_payment_date = ?
-            WHERE discord_id = ?;
-        `).run(currentDate, discordId);
-
-        db.prepare(`
-            UPDATE QRCode
-            SET discord_id = ?
-            WHERE qr_code = ?;
-        `).run(discordId, qrCode);
-    });
-
-    updatePaymentTransaction();
-
-    return {
-        ok: true,
-        message: `${price}円の支払いが完了しました。`,
-        code: 'PAYMENT_UPDATED',
-        paymentDate: currentDate,
-        price,
-    };
 }
 
 // データベース内のすべてのQRコードをPNGファイルとして生成する関数

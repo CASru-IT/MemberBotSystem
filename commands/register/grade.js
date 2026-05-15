@@ -39,7 +39,9 @@ async function grade(interaction) {
             time: 60000
         });
 
-        await collected.reply(`${collected.values[0]}が選択されました`);
+        // 相互作用トークンを確保して Unknown interaction を防ぐ
+        await collected.deferUpdate();
+        await collected.followUp(`${collected.values[0]}が選択されました`);
 
         // セレクターを無効化する
         const disabledSelect = StringSelectMenuBuilder.from(select).setDisabled(true);

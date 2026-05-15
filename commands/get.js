@@ -63,7 +63,7 @@ module.exports = {
                     },
                     {
                         name: "登録日",
-                        value: data.registered_date || "未登録"
+                        value: data.last_register_date || "未登録"
                     },
                     {
                         name: "最終支払日",

@@ -72,6 +72,15 @@ module.exports = {
                     });
 
                     const paymentResult = updatePaymentByQRCode(interaction.user.id, decodeResult.data);
+                    
+                    if (!paymentResult) {
+                        await interaction.followUp({
+                            content: 'システムエラーが発生しました。もう一度お試しください。',
+                            flags: MessageFlags.Ephemeral,
+                        });
+                        return;
+                    }
+                    
                     await interaction.followUp({
                         content: paymentResult.message,
                         flags: MessageFlags.Ephemeral,

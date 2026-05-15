@@ -39,6 +39,15 @@ module.exports = {
             const qrCodeData = submitted.fields.getTextInputValue('Input1');
             console.log('QRコードの内容:', qrCodeData);
             const paymentResult = updatePaymentByQRCode(interaction.user.id, qrCodeData);
+            
+            if (!paymentResult) {
+                await submitted.reply({ 
+                    content: 'システムエラーが発生しました。もう一度お試しください。', 
+                    ephemeral: true 
+                });
+                return;
+            }
+            
             await submitted.reply({ content: paymentResult.message, ephemeral: true });
         } catch (error) {
             console.error('モーダルの待機中にエラーが発生しました:', error);
