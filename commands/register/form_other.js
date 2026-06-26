@@ -5,24 +5,39 @@ async function askCollegeName(interaction) {
     //await interaction.followUp({ content: '大学名を入力してください。', ephemeral: true });
 
     // ユーザーの返信を待つ
+    // モーダルの作成と表示
+    const modal = new ModalBuilder()
+        .setCustomId('collegeForm')
+        .setTitle('大学名の入力');
+
+    const input = new TextInputBuilder()
+        .setCustomId('collegeInput')
+        .setLabel("あなたの大学名を入力してください")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+    const actionRow = new ActionRowBuilder().addComponents(input);
+    modal.addComponents(actionRow);
+
+    await interaction.showModal(modal);
+
+    // 送信の待機
     try {
-        const filter = m => m.author.id === interaction.user.id;
-        const dmChannel = await interaction.user.createDM();
-        await dmChannel.send('大学名を入力してください。');
-
-        const collected = await dmChannel.awaitMessages({
-            filter,
-            max: 1,
+        const submitted = await interaction.awaitModalSubmit({
             time: 60000,
-            errors: ['time']
+            filter: i => i.customId === 'collegeForm'
         });
-
-        const college_name = collected.first().content;
-        return college_name;
-    } catch (error) {
-        console.error(error);
-        return null;
+        
+        const collegeName = submitted.fields.getTextInputValue('collegeInput');
+        await submitted.reply({ content: `大学名「${collegeName}」が入力されました。`, ephemeral: true });
+        return {
+            college_name: collegeName,
+            interaction: submitted // 👈 最新のインタラクションを親に引き継ぐ
+        };
+    } catch (err) {
+        console.error('モーダル待機中にタイムアウトしました');
     }
+
 }
 
 module.exports = {askCollegeName };

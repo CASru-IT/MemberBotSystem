@@ -22,7 +22,7 @@ module.exports = {
         }
         const list0 = await showModal(interaction);
         if (!list0 || list0.length === 0) return;
-        const number_grade = await grade(interaction);
+        const { number_grade, interaction: interactionAfterGrade } = await grade(interaction);
         if (number_grade == null) return;
 
         let title = "学類";
@@ -30,7 +30,8 @@ module.exports = {
         if (number_grade == 6) {
             title = "大学名";
             // ここで「直前のsubmitted Interaction」を渡す
-            department = await askCollegeName(interaction); // ここを修正
+            ({ college_name: department, interaction: interactionAfterCollegeName } = await askCollegeName(interactionAfterGrade)); // ここを修正
+            interaction = interactionAfterCollegeName; // 最新のインタラクションを使用
             if (department == null) return;
         } else {
             department = await academic_department(interaction);
