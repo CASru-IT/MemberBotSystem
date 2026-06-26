@@ -40,8 +40,10 @@ async function grade(interaction) {
         });
 
         // 相互作用トークンを確保して Unknown interaction を防ぐ
-        await collected.deferUpdate();
-        await collected.followUp(`${collected.values[0]}が選択されました`);
+        if (collected.values[0] !== '6') {
+            await collected.deferUpdate();
+            await collected.followUp(`${collected.values[0]}が選択されました`);
+        }
 
         // セレクターを無効化する
         const disabledSelect = StringSelectMenuBuilder.from(select).setDisabled(true);
@@ -51,7 +53,10 @@ async function grade(interaction) {
             components: [disabledRow],
         });
 
-        return collected.values[0];
+        return {
+            number_grade: collected.values[0],
+            interaction: collected 
+        };
     } catch (error) {
         console.error(error);
         await interaction.followUp('時間切れです');
