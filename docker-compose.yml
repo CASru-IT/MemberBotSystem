@@ -10,12 +10,12 @@ services:
     env_file:
       - .env
     environment:
-      - DISCORD_TOKEN:${DISCORD_TOKEN}
-      - CLIENT_ID:${CLIENT_ID}
-      - GUILD_ID:${GUILD_ID}
-      - PASSWORD:${PASSWORD}
-      - ZBARIMG_EXECUTABLE:${ZBARIMG_EXECUTABLE}
-      - ADMIN_PASSWORD:${ADMIN_PASSWORD}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      CLIENT_ID: ${CLIENT_ID}
+      GUILD_ID: ${GUILD_ID}
+      PASSWORD: ${PASSWORD}
+      ZBARIMG_EXECUTABLE: ${ZBARIMG_EXECUTABLE}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     restart: always
 
 volumes:
