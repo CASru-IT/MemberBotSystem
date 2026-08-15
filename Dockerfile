@@ -1,4 +1,6 @@
-FROM node:slim
+# Migration reproducibility: better-sqlite3 11.9.1 does not build on Node 26.
+# This is the exact Node base used by the last known-good Snap Docker image.
+FROM node:25.9.0-bookworm-slim@sha256:e49fd70491eb042270f974167c874d6245287263ffc16422fcf93b3c150409d8
 
 WORKDIR /app
 
