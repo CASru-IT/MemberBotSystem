@@ -187,10 +187,25 @@ DMでQRコード文字列を入力して会費支払いを処理します。
 
 指定した個数のQRコードを生成します。
 
-- `count` で生成数を指定します
+- `count` で1〜100件の生成数を指定します
 - `yen` で `5000円` または `2500円` を指定します
 
-生成したQRコードはデータベースに保存され、画像ファイルも作成されます。
+今回発行した分だけを順番にPNGへ変換し、PNG画像と文字列一覧を実行者だけに返信します。添付は1返信あたり最大10ファイルで、Discordの容量制限に合わせて分割します。画像は `qrcodes/<ID>.png` にも保存されます。同時に複数の発行処理は実行できません。
+
+生成・送信に失敗した場合は登録済みの番号を表示します。コードはすでに有効なため、同じ枚数を発行し直さず、管理者がその番号の画像をサーバーから回収してください。PNGの再生成が必要な場合は、`sqlite.js` の `generateQRCodes([{ id, qr_code, price }, ...])` にDBの該当行を渡します。QR文字列・画像は会費処理に使えるため、ログや公開リポジトリへ掲載しないでください。
+
+### yamato VM120での運用
+
+現在の本番配置は `/home/casru/casru-compose/member-bot/compose.json` です。秘密値は同ディレクトリの `environment.private.json` に保存します。データと画像は `/srv/casru-integrations-20261016/member/data`、`/srv/casru-integrations-20261016/member/qrcodes` を永続マウントします。
+
+更新は対象イメージを事前にビルド・検証し、Composeのimageを更新して、`/home/casru/casru-compose` から次を実行します。
+
+```sh
+sudo python3 -I ./compose.py member-bot check
+sudo python3 -I ./compose.py member-bot up member --apply
+```
+
+2026-10-29の障害は、過去分を含めた全QRの同時画像化で256MiB制限を超えたことが原因でした。画像生成を逐次化し、依頼分だけを描画します。修正版は256MiBでも検証し、本番はDiscord常駐処理・画像受信の余裕を含め512MiBに設定します。画像公開用Webサーバーは不要で、BotからDiscord APIへ添付をアップロードします。LinuxのQR読取は `/usr/bin/zbarimg` と日本語フォント `fonts-noto-cjk` を使用します。
 
 ### `/csv`
 
@@ -231,4 +246,8 @@ Docker Compose では、これらの保存先がコンテナにマウントさ�
 
 - `/register` と `/pay` はDMでのみ使用できます
 - `/csv`、`/team_csv`、`/deleteinfo`、`/qrcode` は許可リストに登録されたユーザーのみ実行できます
-- `npm test` は現状未実装です
+- `npm test` でQR発行・添付・画像からの支払い処理をテストします。SQLite・画像は一時ディレクトリを使い、実Discordには送信しません。`zbarimg` が必要です。
+
+```sh
+docker run --rm --network none --memory=256m --memory-swap=256m --entrypoint npm <検証用イメージ> test
+```

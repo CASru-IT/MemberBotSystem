@@ -146,7 +146,7 @@ function insertQRCode(discord_id, qr_code, price) {
     const insertQRCodeQuery = db.prepare(`
         INSERT INTO QRCode (discord_id, qr_code, price) VALUES (?, ?, ?);
     `);
-    insertQRCodeQuery.run(discord_id, qr_code, price);
+    return insertQRCodeQuery.run(discord_id, qr_code, price).lastInsertRowid;
 }
 
 function getQRCodeByCode(qrCode) {
@@ -220,117 +220,47 @@ function updatePaymentByQRCode(discordId, qrCode) {
     }
 }
 
-// データベース内のすべてのQRコードをPNGファイルとして生成する関数
-function generateAllQRCodes(outputDir = './qrcodes') {
-    // ディレクトリが存在しない場合は作成
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir);
-    }
-
-    // データベースからすべてのQRコードを取得
-    const getAllQRCodesQuery = db.prepare(`
-        SELECT id, qr_code, price FROM QRCode;
-    `);
-    const results = getAllQRCodesQuery.all();
-
-    if (results.length === 0) {
-        console.log('データベースにQRコードが存在しません。');
-        return [];
-    }
-
+// Reuse canvases and render sequentially to bound native image memory.
+async function generateQRCodes(rows, outputDir = './qrcodes') {
+    const path = require('node:path');
+    const { pipeline } = require('node:stream/promises');
+    fs.mkdirSync(outputDir, { recursive: true });
     const generatedFiles = [];
-
-    // 各QRコードをPNGファイルとして生成
-    const promises = results.map(async ({ id, qr_code, price }) => {
-        const outputFilePath = `${outputDir}/${id}.png`;
-
-        try {
-            // 一時的にQRコードを生成
-            const tempFilePath = `${outputDir}/temp_${id}.png`;
-            await QRCode.toFile(tempFilePath, qr_code, {
-                type: 'png',
-                width: 500,
-                margin: 2,
-            });
-            const number = id; // QRコードのIDを取得
-            // Canvasを作成
-            /*const canvas = createCanvas(1200, 400); // 高さをさらに大きくする
+    const canvas = createCanvas(1000, 400);
+    const qrCanvas = createCanvas(300, 300);
+    try {
+        for (const { id, qr_code, price } of rows) {
+            const outputFilePath = path.join(outputDir, `${id}.png`);
             const ctx = canvas.getContext('2d');
-
-            // 背景を白で塗りつぶす
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 日本語フォントを指定してテキストを描画
             ctx.fillStyle = '#000000';
-            ctx.font = '20px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif'; // 日本語フォントを指定
-            ctx.textAlign = 'center';
-            ctx.fillText('Casるへようこそ！', canvas.width / 2, 30);
-
-            // 価格に応じたテキストを描画
-            const priceText = price === 5000 ? '学部生用' : '院生用または外部生用';
-            ctx.fillText(priceText, canvas.width / 2, 60);
-
-            // QRコード画像を読み込んで描画
-            const qrImage = await loadImage(tempFilePath);
-            ctx.drawImage(qrImage, 0, 80, 300, 300);
-
-            // 最終的な画像を保存
-            const out = fs.createWriteStream(outputFilePath);
-            const stream = canvas.createPNGStream();
-            stream.pipe(out);*/
-            // Canvasを作成
-        const canvas = createCanvas(1000, 400); // キャンバスサイズを指定
-        const ctx = canvas.getContext('2d');
-
-        // 背景を白で塗りつぶす
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // テキストのスタイルを設定
-        ctx.fillStyle = '#000000';
-        ctx.font = '30px "Yu Gothic", "Hiragino Sans", "Noto Sans JP", sans-serif'; // 日本語フォントを指定
-        ctx.textAlign = 'left';
-
-        // テキストを描画
-        if(price == 5000) {
-            ctx.fillText('学部生用', 50, 60); // 学部生用のテキストを描画
-        }
-        else {
-            ctx.fillText('院生用または外部生用', 50, 60); // 院生用または外部生用のテキストを描画
-        }
-        ctx.fillText('2025年度 会費', 50, 100);
-        ctx.fillText('金沢大学 CASる', 50, 140);
-        ctx.fillText(`No. ${number}`, 50, 180);
-        ctx.fillText(`支払額   ¥${price}`, 50, 220);
-        
-
-        // QRコード画像を読み込んで描画
-        const qrImage = await loadImage(tempFilePath);
-        ctx.drawImage(qrImage, 570, 40, 300, 300); // QRコードを右側に配置
-
-        // QRコードの説明を描画
-        ctx.fillText('QRコードを写真に撮って', 50, 300);
-        ctx.fillText('会員情報管理BOTに送ってください。', 50, 340);
-
-        // 最終的な画像を保存
-        const out = fs.createWriteStream(outputFilePath);
-        const stream = canvas.createPNGStream();
-        stream.pipe(out);
-
-            await new Promise((resolve) => out.on('finish', resolve));
-
-            console.log(`QRコードが生成されました: ${outputFilePath}`);
+            ctx.font = '30px "Noto Sans CJK JP", "Yu Gothic", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(Number(price) === 5000 ? '学部生用' : '院生用または外部生用', 50, 60);
+            const now = new Date();
+            const fiscalYear = now.getFullYear() - (now.getMonth() < 3 ? 1 : 0);
+            ctx.fillText(`${fiscalYear}年度 会費`, 50, 100);
+            ctx.fillText('金沢大学 CASる', 50, 140);
+            ctx.fillText(`No. ${id}`, 50, 180);
+            ctx.fillText(`支払額   ¥${price}`, 50, 220);
+            await QRCode.toCanvas(qrCanvas, qr_code, { width: 300, margin: 2 });
+            ctx.drawImage(qrCanvas, 570, 40);
+            ctx.fillText('QRコードを写真に撮って', 50, 300);
+            ctx.fillText('会員情報管理BOTに送ってください。', 50, 340);
+            // Reject on encoding or write failure instead of waiting forever.
+            await pipeline(canvas.createPNGStream(), fs.createWriteStream(outputFilePath));
             generatedFiles.push(outputFilePath);
-
-            // 一時ファイルを削除
-            fs.unlinkSync(tempFilePath);
-        } catch (err) {
-            console.error(`QRコード生成中にエラーが発生しました (ID: ${id}):`, err);
         }
-    });
+        return generatedFiles;
+    } finally {
+        canvas.width = canvas.height = 0;
+        qrCanvas.width = qrCanvas.height = 0;
+    }
+}
 
-    return Promise.all(promises).then(() => generatedFiles);
+function generateAllQRCodes(outputDir = './qrcodes') {
+    return generateQRCodes(db.prepare('SELECT id, qr_code, price FROM QRCode ORDER BY id').all(), outputDir);
 }
 
 async function generateCustomQRCode(outputFilePath, qrCodeData, price) {
@@ -414,6 +344,7 @@ module.exports = {
     getQRCodeByCode,
     updatePaymentByQRCode,
     generateAllQRCodes,
+    generateQRCodes,
     generateCustomQRCode,
     DeleteAllQRCodes
 };
